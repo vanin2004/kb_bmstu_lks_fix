@@ -447,20 +447,28 @@ function sortCourseBoxes(customTitles) {
       }
     });
 
+    const getName = (box) => {
+      const id = box.dataset.courseid;
+      return (customTitles[id] || box.querySelector('.coursename a')?.dataset?.kbOriginal
+        || box.querySelector('.coursename a')?.textContent || '').trim().toLowerCase();
+    };
+
     if (_features.sortAlpha) {
-      // Сортировка по алфавиту
+      // Сортировка: сначала видимые, затем скрытые; внутри каждой группы — по алфавиту
       boxes.sort((a, b) => {
-        const idA = a.dataset.courseid;
-        const idB = b.dataset.courseid;
-        const nameA = (customTitles[idA] || a.querySelector('.coursename a')?.dataset?.kbOriginal
-          || a.querySelector('.coursename a')?.textContent || '').trim().toLowerCase();
-        const nameB = (customTitles[idB] || b.querySelector('.coursename a')?.dataset?.kbOriginal
-          || b.querySelector('.coursename a')?.textContent || '').trim().toLowerCase();
-        return nameA.localeCompare(nameB, 'ru');
+        const aHidden = a.classList.contains('kb-hidden-item') ? 1 : 0;
+        const bHidden = b.classList.contains('kb-hidden-item') ? 1 : 0;
+        if (aHidden !== bHidden) return aHidden - bHidden;
+        return getName(a).localeCompare(getName(b), 'ru');
       });
     } else {
-      // Восстановить исходный порядок
-      boxes.sort((a, b) => Number(a.dataset.kbOriginalIndex) - Number(b.dataset.kbOriginalIndex));
+      // Восстановить исходный порядок, но всё равно видимые перед скрытыми
+      boxes.sort((a, b) => {
+        const aHidden = a.classList.contains('kb-hidden-item') ? 1 : 0;
+        const bHidden = b.classList.contains('kb-hidden-item') ? 1 : 0;
+        if (aHidden !== bHidden) return aHidden - bHidden;
+        return Number(a.dataset.kbOriginalIndex) - Number(b.dataset.kbOriginalIndex);
+      });
     }
 
     // Переставить узлы в нужном порядке (без удаления из DOM)
