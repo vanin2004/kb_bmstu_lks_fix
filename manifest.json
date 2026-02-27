@@ -22,6 +22,9 @@
     "activeTab",
     "tabs"
   ],
+  "host_permissions": [
+    "*://e-learning.bmstu.ru/kaluga/*"
+  ],
   "content_scripts": [
     {
       "matches": ["*://e-learning.bmstu.ru/kaluga/*"],
