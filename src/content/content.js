@@ -393,6 +393,41 @@ function createBulkToolbar() {
   courseList.insertAdjacentElement('beforebegin', toolbar);
 }
 
+// Сортировать .coursebox внутри каждого родительского контейнера по отображаемому названию
+function sortCourseBoxes(customTitles) {
+  // Собираем уникальные родительские контейнеры с карточками
+  const parents = new Set();
+  document.querySelectorAll('.coursebox[data-courseid]').forEach(box => {
+    if (box.parentElement) parents.add(box.parentElement);
+  });
+
+  parents.forEach(parent => {
+    const boxes = Array.from(parent.querySelectorAll(':scope > .coursebox[data-courseid]'));
+    if (boxes.length < 2) return;
+
+    boxes.sort((a, b) => {
+      const idA = a.dataset.courseid;
+      const idB = b.dataset.courseid;
+      const nameA = (customTitles[idA] || a.querySelector('.coursename a')?.dataset?.kbOriginal
+        || a.querySelector('.coursename a')?.textContent || '').trim().toLowerCase();
+      const nameB = (customTitles[idB] || b.querySelector('.coursename a')?.dataset?.kbOriginal
+        || b.querySelector('.coursename a')?.textContent || '').trim().toLowerCase();
+      return nameA.localeCompare(nameB, 'ru');
+    });
+
+    // Переставить узлы в отсортированном порядке (без удаления из DOM)
+    boxes.forEach(box => parent.appendChild(box));
+
+    // Переназначить классы odd/even/first/last по новой позиции
+    boxes.forEach((box, i) => {
+      box.classList.remove('odd', 'even', 'first', 'last');
+      box.classList.add(i % 2 === 0 ? 'even' : 'odd');
+      if (i === 0)              box.classList.add('first');
+      if (i === boxes.length - 1) box.classList.add('last');
+    });
+  });
+}
+
 // Обработать все карточки на главной странице
 function processAllCourseBoxes(hiddenItems, customTitles, itemColors) {
   const boxes = document.querySelectorAll('.coursebox[data-courseid]');
@@ -408,6 +443,8 @@ function processAllCourseBoxes(hiddenItems, customTitles, itemColors) {
       createEditPanel(box, id);
     }
   });
+
+  sortCourseBoxes(customTitles);
 }
 
 // ── Извлечь имена преподавателей из DOM и сохранить в storage ────────────────
