@@ -21,6 +21,11 @@
   pointer-events: none;
 }
 
+/* ── Скрыть описание карточки в режиме редактирования ───────────────────── */
+body.kb-edit-mode .coursebox .summary {
+  display: none;
+}
+
 /* ── Скрытый предмет в режиме редактирования ─────────────────────────────── */
 body.kb-edit-mode .coursebox.kb-hidden-item {
   opacity: 0.45;

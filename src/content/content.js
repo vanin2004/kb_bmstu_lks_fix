@@ -74,6 +74,12 @@ function applyEnrolIconVisibility(hide) {
   });
 }
 
+function applyMainPageHeaderVisibility(hide) {
+  if (!isMainPage) return;
+  const header = document.getElementById('page-header');
+  if (header) header.style.display = hide ? 'none' : '';
+}
+
 // ── Идентификатор предмета ───────────────────────────────────────────────────
 function getCourseIdFromUrl(url) {
   const m = (url || location.href).match(/[?&]id=(\d+)/);
@@ -620,10 +626,11 @@ async function initMainPage() {
 
 // ── Обработчик компактного вида ───────────────────────────────────────────────
 async function initCompactSettings() {
-  const cfg = await adapter.getMultiple(['hideCourseCategoryCombo', 'hidePagingMoreLink', 'hideEnrolIcon']);
+  const cfg = await adapter.getMultiple(['hideCourseCategoryCombo', 'hidePagingMoreLink', 'hideEnrolIcon', 'hideMainPageHeader']);
   applyCourseCategoryComboVisibility(!!cfg.hideCourseCategoryCombo);
   applyPagingMoreLinkVisibility(!!cfg.hidePagingMoreLink);
   applyEnrolIconVisibility(!!cfg.hideEnrolIcon);
+  applyMainPageHeaderVisibility(!!cfg.hideMainPageHeader);
 }
 
 // ── Слушатель сообщений от popup ─────────────────────────────────────────────
@@ -664,6 +671,11 @@ extAPI.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
     case 'hideEnrolIconChanged':
       applyEnrolIconVisibility(message.value);
+      sendResponse && sendResponse({ ok: true });
+      break;
+
+    case 'hideMainPageHeaderChanged':
+      applyMainPageHeaderVisibility(message.value);
       sendResponse && sendResponse({ ok: true });
       break;
 

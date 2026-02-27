@@ -22,6 +22,7 @@ const themeOptionsBlock           = document.getElementById('theme-options');
 const hideCourseCategoryComboCheckbox = document.getElementById('hide-course-category-combo-checkbox');
 const hidePagingMoreLinkCheckbox       = document.getElementById('hide-paging-morelink-checkbox');
 const hideEnrolIconCheckbox            = document.getElementById('hide-enrol-icon-checkbox');
+const hideMainPageHeaderCheckbox       = document.getElementById('hide-main-page-header-checkbox');
 const featureSortAlphaCheckbox        = document.getElementById('feature-sort-alpha-checkbox');
 const featureSwapOddEvenCheckbox      = document.getElementById('feature-swap-odd-even-checkbox');
 
@@ -59,6 +60,7 @@ async function loadSettings() {
     'hideCourseCategoryCombo',
     'hidePagingMoreLink',
     'hideEnrolIcon',
+    'hideMainPageHeader',
     'featureSortAlpha',
     'featureSwapOddEven',
   ]);
@@ -70,6 +72,7 @@ async function loadSettings() {
   hideCourseCategoryComboCheckbox.checked = cfg.hideCourseCategoryCombo ?? false;
   hidePagingMoreLinkCheckbox.checked       = cfg.hidePagingMoreLink       ?? false;
   hideEnrolIconCheckbox.checked            = cfg.hideEnrolIcon            ?? false;
+  hideMainPageHeaderCheckbox.checked       = cfg.hideMainPageHeader       ?? false;
   featureSortAlphaCheckbox.checked        = cfg.featureSortAlpha        ?? true;
   featureSwapOddEvenCheckbox.checked      = cfg.featureSwapOddEven      ?? true;
 
@@ -138,6 +141,13 @@ hideEnrolIconCheckbox.addEventListener('change', async () => {
   const hide = hideEnrolIconCheckbox.checked;
   await adapter.set('hideEnrolIcon', hide);
   await sendToContentScript({ type: 'hideEnrolIconChanged', value: hide });
+});
+
+// Скрытие шапки на главной странице
+hideMainPageHeaderCheckbox.addEventListener('change', async () => {
+  const hide = hideMainPageHeaderCheckbox.checked;
+  await adapter.set('hideMainPageHeader', hide);
+  await sendToContentScript({ type: 'hideMainPageHeaderChanged', value: hide });
 });
 
 // Фича: сортировка по алфавиту
