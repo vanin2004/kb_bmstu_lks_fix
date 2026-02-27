@@ -40,36 +40,20 @@ let _features = {
 };
 
 // ── Утилиты ─────────────────────────────────────────────────────────────────
-function getThemeStyleUrl() {
-  return extAPI.runtime.getURL('src/styles/theme-override.css');
-}
-
-function getThemeLinkEl() {
-  return document.getElementById('kb-theme-override-link');
-}
-
 function applyTheme(themeEnabled, theme, accent) {
+  // CSS загружен через content_scripts — достаточно управлять data-атрибутами
   const html = document.documentElement;
-
-  if (!themeEnabled) {
-    const link = getThemeLinkEl();
-    if (link) link.remove();
+  if (themeEnabled) {
+    html.dataset.theme  = theme  || 'system';
+    html.dataset.accent = accent || 'violet';
+  } else {
     delete html.dataset.theme;
     delete html.dataset.accent;
-    return;
   }
-
-  if (!getThemeLinkEl()) {
-    const link = document.createElement('link');
-    link.rel  = 'stylesheet';
-    link.type = 'text/css';
-    link.id   = 'kb-theme-override-link';
-    link.href = getThemeStyleUrl();
-    document.head.appendChild(link);
-  }
-
-  html.dataset.theme  = theme  || 'system';
-  html.dataset.accent = accent || 'violet';
+  // Синхронизировать кеш, чтобы theme-early.js при следующей загрузке сработал мгновенно
+  try {
+    sessionStorage.setItem('kb_theme_cfg', JSON.stringify({ themeEnabled, theme, accent }));
+  } catch (_) {}
 }
 
 function applyCourseCategoryComboVisibility(hide) {

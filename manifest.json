@@ -26,6 +26,16 @@
     {
       "matches": ["*://e-learning.bmstu.ru/kaluga/*"],
       "js": [
+        "src/content/theme-early.js"
+      ],
+      "css": [
+        "src/styles/theme-override.css"
+      ],
+      "run_at": "document_start"
+    },
+    {
+      "matches": ["*://e-learning.bmstu.ru/kaluga/*"],
+      "js": [
         "src/storage.js",
         "src/content/content.js"
       ],
