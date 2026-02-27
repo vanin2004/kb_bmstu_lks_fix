@@ -84,6 +84,12 @@ function applyPagingMoreLinkVisibility(hide) {
   });
 }
 
+function applyEnrolIconVisibility(hide) {
+  document.querySelectorAll('img[src*="enrol_bmstugroups"]').forEach(el => {
+    el.style.display = hide ? 'none' : '';
+  });
+}
+
 // ── Идентификатор предмета ───────────────────────────────────────────────────
 function getCourseIdFromUrl(url) {
   const m = (url || location.href).match(/[?&]id=(\d+)/);
@@ -602,9 +608,10 @@ async function initMainPage() {
 
 // ── Обработчик компактного вида ───────────────────────────────────────────────
 async function initCompactSettings() {
-  const cfg = await adapter.getMultiple(['hideCourseCategoryCombo', 'hidePagingMoreLink']);
+  const cfg = await adapter.getMultiple(['hideCourseCategoryCombo', 'hidePagingMoreLink', 'hideEnrolIcon']);
   applyCourseCategoryComboVisibility(!!cfg.hideCourseCategoryCombo);
   applyPagingMoreLinkVisibility(!!cfg.hidePagingMoreLink);
+  applyEnrolIconVisibility(!!cfg.hideEnrolIcon);
 }
 
 // ── Слушатель сообщений от popup ─────────────────────────────────────────────
@@ -640,6 +647,11 @@ extAPI.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
     case 'hidePagingMoreLinkChanged':
       applyPagingMoreLinkVisibility(message.value);
+      sendResponse && sendResponse({ ok: true });
+      break;
+
+    case 'hideEnrolIconChanged':
+      applyEnrolIconVisibility(message.value);
       sendResponse && sendResponse({ ok: true });
       break;
 

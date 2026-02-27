@@ -21,6 +21,7 @@ const accentSelect                = document.getElementById('accent-select');
 const themeOptionsBlock           = document.getElementById('theme-options');
 const hideCourseCategoryComboCheckbox = document.getElementById('hide-course-category-combo-checkbox');
 const hidePagingMoreLinkCheckbox       = document.getElementById('hide-paging-morelink-checkbox');
+const hideEnrolIconCheckbox            = document.getElementById('hide-enrol-icon-checkbox');
 const featureSortAlphaCheckbox        = document.getElementById('feature-sort-alpha-checkbox');
 const featureSwapOddEvenCheckbox      = document.getElementById('feature-swap-odd-even-checkbox');
 
@@ -57,6 +58,7 @@ async function loadSettings() {
     'accent',
     'hideCourseCategoryCombo',
     'hidePagingMoreLink',
+    'hideEnrolIcon',
     'featureSortAlpha',
     'featureSwapOddEven',
   ]);
@@ -67,6 +69,7 @@ async function loadSettings() {
   accentSelect.value                      = cfg.accent                  ?? 'violet';
   hideCourseCategoryComboCheckbox.checked = cfg.hideCourseCategoryCombo ?? false;
   hidePagingMoreLinkCheckbox.checked       = cfg.hidePagingMoreLink       ?? false;
+  hideEnrolIconCheckbox.checked            = cfg.hideEnrolIcon            ?? false;
   featureSortAlphaCheckbox.checked        = cfg.featureSortAlpha        ?? true;
   featureSwapOddEvenCheckbox.checked      = cfg.featureSwapOddEven      ?? true;
 
@@ -128,6 +131,13 @@ hidePagingMoreLinkCheckbox.addEventListener('change', async () => {
   const hide = hidePagingMoreLinkCheckbox.checked;
   await adapter.set('hidePagingMoreLink', hide);
   await sendToContentScript({ type: 'hidePagingMoreLinkChanged', value: hide });
+});
+
+// Скрытие иконки записи в группу МГТУ
+hideEnrolIconCheckbox.addEventListener('change', async () => {
+  const hide = hideEnrolIconCheckbox.checked;
+  await adapter.set('hideEnrolIcon', hide);
+  await sendToContentScript({ type: 'hideEnrolIconChanged', value: hide });
 });
 
 // Фича: сортировка по алфавиту
