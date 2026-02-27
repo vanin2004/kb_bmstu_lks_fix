@@ -50,6 +50,18 @@ function setEditModeButtons(active) {
   editModeActiveBtns.style.display = active ? ''     : 'none';
 }
 
+// ── Применить тему к самому попапу (data-theme / data-accent на <html>) ──────
+function applyPopupTheme(themeEnabled, theme, accent) {
+  const html = document.documentElement;
+  if (themeEnabled) {
+    html.dataset.theme  = theme  || 'system';
+    html.dataset.accent = accent || 'violet';
+  } else {
+    delete html.dataset.theme;
+    delete html.dataset.accent;
+  }
+}
+
 // ── Загрузка настроек из хранилища ─────────────────────────────────────────
 async function loadSettings() {
   const cfg = await adapter.getMultiple([
@@ -77,6 +89,11 @@ async function loadSettings() {
   featureSwapOddEvenCheckbox.checked      = cfg.featureSwapOddEven      ?? true;
 
   setThemeOptionsVisible(themeEnabledCheckbox.checked);
+  applyPopupTheme(
+    cfg.themeEnabled ?? false,
+    cfg.theme        ?? 'system',
+    cfg.accent       ?? 'violet',
+  );
 }
 
 // ── Обработчики событий ─────────────────────────────────────────────────────
@@ -105,6 +122,7 @@ themeEnabledCheckbox.addEventListener('change', async () => {
   const enabled = themeEnabledCheckbox.checked;
   await adapter.set('themeEnabled', enabled);
   setThemeOptionsVisible(enabled);
+  applyPopupTheme(enabled, themeSelect.value, accentSelect.value);
   await sendToContentScript({ type: 'themeChanged', key: 'themeEnabled', value: enabled });
 });
 
@@ -112,6 +130,7 @@ themeEnabledCheckbox.addEventListener('change', async () => {
 themeSelect.addEventListener('change', async () => {
   const theme = themeSelect.value;
   await adapter.set('theme', theme);
+  applyPopupTheme(themeEnabledCheckbox.checked, theme, accentSelect.value);
   await sendToContentScript({ type: 'themeChanged', key: 'theme', value: theme });
 });
 
@@ -119,6 +138,7 @@ themeSelect.addEventListener('change', async () => {
 accentSelect.addEventListener('change', async () => {
   const accent = accentSelect.value;
   await adapter.set('accent', accent);
+  applyPopupTheme(themeEnabledCheckbox.checked, themeSelect.value, accent);
   await sendToContentScript({ type: 'themeChanged', key: 'accent', value: accent });
 });
 
