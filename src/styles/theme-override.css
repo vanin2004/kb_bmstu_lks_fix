@@ -118,7 +118,8 @@ Example JS:
     }
 
     .copyright:after {
-        content: "© 2024 BMSTU ELS MD3, Ожогов Сергей Константинович";
+        content: "© 2024 BMSTU ELS MD3, Автор кастомной темы: Ожогов Сергей Константинович\A© 2026 kb_bmstu_lks_fix, Автор расширения: Ванин Иван Тимофеевич";
+        white-space: pre;
     }
 
     /* Animations */

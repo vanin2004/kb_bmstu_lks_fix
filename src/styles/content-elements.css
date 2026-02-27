@@ -127,9 +127,17 @@ body.kb-edit-mode .coursebox.kb-hidden-item::after {
   text-overflow: ellipsis;
 }
 
+/* ── Строка редактирования названия ───────────────────────────────────────────── */
+.kb-title-row {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
 /* ── Поле ввода кастомного названия ─────────────────────────────────────── */
 .kb-title-input {
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   font-size: 13px;
   font-family: inherit;
   padding: 4px 8px;
@@ -147,44 +155,59 @@ body.kb-edit-mode .coursebox.kb-hidden-item::after {
   box-shadow: 0 0 0 2px rgba(92, 107, 192, 0.18);
 }
 
-/* ── Обёртка выбора цвета ────────────────────────────────────────────────── */
+.kb-reset-title-btn {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-family: inherit;
+  padding: 4px 7px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: #f0f0f0;
+  color: #555;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+}
+
+.kb-reset-title-btn:hover {
+  background: #e3e3f5;
+  color: #3f50b5;
+  border-color: #9fa8da;
+}
+
+/* ── Палитра акцентных цветов ────────────────────────────────────────────── */
 .kb-color-wrapper {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
+  flex-wrap: wrap;
 }
 
-/* ── Кнопка-colour picker ────────────────────────────────────────────────── */
-.kb-color-btn {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 28px;
-  height: 28px;
-  padding: 2px;
-  border: 1px solid #bbb;
-  border-radius: 50%;
-  cursor: pointer;
-  background: transparent;
+.kb-color-label {
+  font-size: 12px;
+  color: #555;
   flex-shrink: 0;
-  transition: border-color 0.15s;
+  margin-right: 2px;
 }
 
-.kb-color-btn::-webkit-color-swatch-wrapper {
+.kb-color-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  flex-shrink: 0;
   padding: 0;
+  outline: none;
+  transition: transform 0.1s, box-shadow 0.15s;
 }
 
-.kb-color-btn::-webkit-color-swatch {
-  border: none;
-  border-radius: 50%;
+.kb-color-swatch:hover {
+  transform: scale(1.2);
 }
 
-.kb-color-btn::-moz-color-swatch {
-  border: none;
-  border-radius: 50%;
-}
-
-.kb-color-btn:hover {
-  border-color: #5c6bc0;
+.kb-color-swatch--active {
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px rgba(0, 0, 0, 0.55);
 }
 
 /* ── Кнопка сброса цвета ─────────────────────────────────────────────────── */
@@ -208,24 +231,16 @@ body.kb-edit-mode .coursebox.kb-hidden-item::after {
 
 /* ── Блок кастомной информации на страницах предмета / модулей ────────────── */
 .kb-course-info-block {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 6px;
-  padding: 4px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 8px;
+  padding: 6px 10px 6px 12px;
   background: rgba(92, 107, 192, 0.08);
-  border-left: 3px solid var(--kb-info-block-color, #5c6bc0);
+  border-left: 3px solid var(--kb-course-color, var(--md-sys-color-primary, #694fa3));
   border-radius: 0 4px 4px 0;
   font-size: 13px;
-  line-height: 1.3;
-}
-
-.kb-course-color-marker {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  flex-shrink: 0;
+  line-height: 1.4;
 }
 
 .kb-course-custom-title {
@@ -233,9 +248,9 @@ body.kb-edit-mode .coursebox.kb-hidden-item::after {
   color: #3a3a5c;
 }
 
-/* При наличии цвета — использовать его для левой границы блока */
-.kb-course-info-block:has(.kb-course-color-marker) {
-  border-left-color: var(--kb-course-color, #5c6bc0);
+.kb-course-teachers {
+  font-size: 11px;
+  color: #666;
 }
 
 /* ── Тёмная тема для элементов расширения ─────────────────────────────────── */
@@ -288,6 +303,10 @@ body.kb-edit-mode .coursebox.kb-hidden-item::after {
       color: #c5cae9;
     }
 
+    & .kb-course-teachers {
+      color: #9e9e9e;
+    }
+
     /* Кнопки */
     & .kb-btn {
       box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
@@ -338,5 +357,9 @@ html[data-theme="dark"] {
 
   .kb-course-custom-title {
     color: #c5cae9;
+  }
+
+  .kb-course-teachers {
+    color: #9e9e9e;
   }
 }

@@ -99,20 +99,40 @@ async function initTheme() {
   applyTheme(cfg.themeEnabled, cfg.theme, cfg.accent);
 }
 
+// ── Заменить h1 кастомным названием на странице предмета / модуля ────────────
+async function applyCustomTitleToHeading() {
+  const courseId = getCurrentCourseId();
+  if (!courseId) return;
+
+  const customTitles = (await adapter.get('customTitles')) || {};
+  const customTitle  = customTitles[courseId] || null;
+  if (!customTitle) return;
+
+  const h1 = document.querySelector('#page-header .page-header-headings h1');
+  if (!h1) return;
+
+  if (!h1.dataset.kbOriginal) {
+    h1.dataset.kbOriginal = h1.textContent.trim();
+  }
+  h1.textContent = customTitle;
+}
+
 // ── Блок кастомной информации на страницах предмета / модулей ────────────────
 async function injectCourseInfoBlock() {
   const courseId = getCurrentCourseId();
   if (!courseId) return;
 
-  const cfg = await adapter.getMultiple(['customTitles', 'itemColors']);
-  const customTitles = cfg.customTitles || {};
-  const itemColors   = cfg.itemColors   || {};
+  const cfg = await adapter.getMultiple(['customTitles', 'itemColors', 'courseTeachers']);
+  const customTitles   = cfg.customTitles   || {};
+  const itemColors     = cfg.itemColors     || {};
+  const courseTeachers = cfg.courseTeachers || {};
 
-  const customTitle = customTitles[courseId] || null;
-  const color       = itemColors[courseId]   || null;
+  const customTitle = customTitles[courseId]   || null;
+  const color       = itemColors[courseId]     || null;
+  const teachers    = courseTeachers[courseId] || [];
 
-  // Не вставляем, если нет ни кастомного названия, ни цвета
-  if (!customTitle && !color) return;
+  // Не вставляем, если нечего показывать
+  if (!customTitle && !color && teachers.length === 0) return;
 
   const cardBody = document.querySelector('#page-header .card-body');
   if (!cardBody) return;
@@ -124,18 +144,23 @@ async function injectCourseInfoBlock() {
   block.id = 'kb-course-info-block';
   block.className = 'kb-course-info-block';
 
+  // Цвет курса через CSS-переменную → используется для border-left
   if (color) {
-    const marker = document.createElement('span');
-    marker.className = 'kb-course-color-marker';
-    marker.style.background = color;
-    block.appendChild(marker);
+    block.style.setProperty('--kb-course-color', color);
   }
 
   if (customTitle) {
-    const title = document.createElement('span');
+    const title = document.createElement('div');
     title.className = 'kb-course-custom-title';
     title.textContent = customTitle;
     block.appendChild(title);
+  }
+
+  if (teachers.length > 0) {
+    const teacherEl = document.createElement('div');
+    teacherEl.className = 'kb-course-teachers';
+    teacherEl.textContent = teachers.join(', ');
+    block.appendChild(teacherEl);
   }
 
   cardBody.appendChild(block);
@@ -213,6 +238,9 @@ function createEditPanel(box, courseId) {
   origNameEl.textContent = origText;
 
   // --- Редактируемое поле названия
+  const titleRow = document.createElement('div');
+  titleRow.className = 'kb-title-row';
+
   const titleInput = document.createElement('input');
   titleInput.type = 'text';
   titleInput.className = 'kb-title-input';
@@ -224,38 +252,77 @@ function createEditPanel(box, courseId) {
     if (origLink) origLink.textContent = val || origText;
   });
 
-  // --- Кнопка выбора цвета
+  const resetTitleBtn = document.createElement('button');
+  resetTitleBtn.type = 'button';
+  resetTitleBtn.className = 'kb-reset-title-btn';
+  resetTitleBtn.textContent = 'по умолч.';
+  resetTitleBtn.title = 'Сбросить к исходному названию';
+  resetTitleBtn.addEventListener('click', () => {
+    titleInput.value = origText;
+    _editState.customTitles[courseId] = null;
+    if (origLink) origLink.textContent = origText;
+  });
+
+  titleRow.appendChild(titleInput);
+  titleRow.appendChild(resetTitleBtn);
+
+  // --- Палитра акцентных цветов
+  const ACCENT_PALETTE = [
+    { label: 'Фиолетовый', hex: '#694fa3' },
+    { label: 'Синий',      hex: '#00658b' },
+    { label: 'Розовый',    hex: '#95416e' },
+    { label: 'Красный',    hex: '#9c4235' },
+    { label: 'Зелёный',    hex: '#006c4b' },
+  ];
+
   const colorWrapper = document.createElement('div');
   colorWrapper.className = 'kb-color-wrapper';
 
-  const colorBtn = document.createElement('input');
-  colorBtn.type = 'color';
-  colorBtn.className = 'kb-color-btn';
-  colorBtn.value = _editState.itemColors[courseId] || '#5c6bc0';
+  const colorLabel = document.createElement('span');
+  colorLabel.className = 'kb-color-label';
+  colorLabel.textContent = 'Цвет:';
+  colorWrapper.appendChild(colorLabel);
+
+  ACCENT_PALETTE.forEach(({ label, hex }) => {
+    const swatch = document.createElement('button');
+    swatch.type = 'button';
+    swatch.className = 'kb-color-swatch';
+    swatch.style.background = hex;
+    swatch.title = label;
+    if (_editState.itemColors[courseId] === hex) {
+      swatch.classList.add('kb-color-swatch--active');
+    }
+    swatch.addEventListener('click', () => {
+      colorWrapper.querySelectorAll('.kb-color-swatch').forEach(s =>
+        s.classList.remove('kb-color-swatch--active')
+      );
+      swatch.classList.add('kb-color-swatch--active');
+      _editState.itemColors[courseId] = hex;
+      applyColorStrip(box, hex);
+    });
+    colorWrapper.appendChild(swatch);
+  });
 
   const clearColorBtn = document.createElement('button');
+  clearColorBtn.type = 'button';
   clearColorBtn.className = 'kb-clear-color-btn';
   clearColorBtn.textContent = '✕';
   clearColorBtn.title = 'Сбросить цвет';
 
-  colorBtn.addEventListener('input', () => {
-    const color = colorBtn.value;
-    _editState.itemColors[courseId] = color;
-    applyColorStrip(box, color);
-  });
-
   clearColorBtn.addEventListener('click', () => {
+    colorWrapper.querySelectorAll('.kb-color-swatch').forEach(s =>
+      s.classList.remove('kb-color-swatch--active')
+    );
     delete _editState.itemColors[courseId];
     applyColorStrip(box, null);
   });
 
-  colorWrapper.appendChild(colorBtn);
   colorWrapper.appendChild(clearColorBtn);
 
   // --- Сборка панели
   panel.appendChild(hideLabel);
   panel.appendChild(origNameEl);
-  panel.appendChild(titleInput);
+  panel.appendChild(titleRow);
   panel.appendChild(colorWrapper);
 
   box.appendChild(panel);
@@ -343,6 +410,22 @@ function processAllCourseBoxes(hiddenItems, customTitles, itemColors) {
   });
 }
 
+// ── Извлечь имена преподавателей из DOM и сохранить в storage ────────────────
+function extractAndSaveTeachers() {
+  const teachers = {};
+  document.querySelectorAll('.coursebox[data-courseid]').forEach(box => {
+    const id = box.dataset.courseid;
+    if (!id) return;
+    const links = box.querySelectorAll('.teachers li a');
+    if (links.length > 0) {
+      teachers[id] = Array.from(links).map(a => a.textContent.trim()).filter(Boolean);
+    }
+  });
+  if (Object.keys(teachers).length > 0) {
+    adapter.set('courseTeachers', teachers);
+  }
+}
+
 // ── Включить режим редактирования ────────────────────────────────────────────
 async function enableEditMode() {
   // Загрузить текущие данные в рабочую копию
@@ -411,10 +494,7 @@ async function initMainPage() {
   }
 
   processAllCourseBoxes(_editState.hiddenItems, _editState.customTitles, _editState.itemColors);
-
-  if (_editMode) {
-    // Панели редактирования добавлены внутри processAllCourseBoxes
-  }
+  extractAndSaveTeachers();
 }
 
 // ── Обработчик компактного вида ───────────────────────────────────────────────
@@ -470,6 +550,7 @@ extAPI.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (isMainPage) {
     await initMainPage();
   } else if (isCoursePage || isModPage) {
+    await applyCustomTitleToHeading();
     await injectCourseInfoBlock();
   }
 })();
