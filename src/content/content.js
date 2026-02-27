@@ -206,9 +206,9 @@ function applyTitle(box, courseId, customTitles) {
 function applyVisibility(box, courseId, hiddenItems) {
   if (hiddenItems[courseId]) {
     box.classList.add('kb-hidden-item');
-    if (!_editMode) {
-      box.style.display = 'none';
-    }
+    // В режиме редактирования скрытые предметы показываем (с классом-маркером),
+    // в обычном режиме — прячем через display:none
+    box.style.display = _editMode ? '' : 'none';
   } else {
     box.classList.remove('kb-hidden-item');
     box.style.display = '';
