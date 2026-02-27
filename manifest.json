@@ -1,0 +1,50 @@
+{
+  "manifest_version": 3,
+  "name": "kb_bmstu_lks_fix",
+  "version": "1.0.0",
+  "description": "Расширение для повышения удобства использования ЭОС МГТУ им. Н.Э. Баумана",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_popup": "src/popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    },
+    "default_title": "Настройки kb_bmstu_lks_fix"
+  },
+  "permissions": ["storage", "activeTab"],
+  "host_permissions": ["https://e-learning.bmstu.ru/*"],
+  "content_scripts": [
+    {
+      "matches": ["https://e-learning.bmstu.ru/kaluga/*"],
+      "js": ["src/content/early.js"],
+      "css": ["src/styles/base-fixes.css"],
+      "run_at": "document_start"
+    },
+    {
+      "matches": ["https://e-learning.bmstu.ru/kaluga/*"],
+      "js": [
+        "src/content/modules/storage-adapter.js",
+        "src/content/modules/compact-mode.js",
+        "src/content/modules/items-manager.js",
+        "src/content/modules/customization-manager.js",
+        "src/content/modules/theme-manager.js",
+        "src/content/main.js"
+      ],
+      "run_at": "document_end"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["src/styles/*.css", "theme-override-pure.css"],
+      "matches": ["https://e-learning.bmstu.ru/*"]
+    }
+  ]
+}
+
+
