@@ -32,6 +32,12 @@ let _editState = {
 
 let _editMode = false;
 
+// Флаги включённых фич (по умолчанию включены)
+let _features = {
+  sortAlpha:    true,
+  swapOddEven:  true,
+};
+
 // ── Утилиты ─────────────────────────────────────────────────────────────────
 function getThemeStyleUrl() {
   return extAPI.runtime.getURL('src/styles/theme-override.css');
@@ -395,6 +401,8 @@ function createBulkToolbar() {
 
 // Сортировать .coursebox внутри каждого родительского контейнера по отображаемому названию
 function sortCourseBoxes(customTitles) {
+  if (!_features.sortAlpha && !_features.swapOddEven) return;
+
   // Собираем уникальные родительские контейнеры с карточками
   const parents = new Set();
   document.querySelectorAll('.coursebox[data-courseid]').forEach(box => {
@@ -405,24 +413,27 @@ function sortCourseBoxes(customTitles) {
     const boxes = Array.from(parent.querySelectorAll(':scope > .coursebox[data-courseid]'));
     if (boxes.length < 2) return;
 
-    boxes.sort((a, b) => {
-      const idA = a.dataset.courseid;
-      const idB = b.dataset.courseid;
-      const nameA = (customTitles[idA] || a.querySelector('.coursename a')?.dataset?.kbOriginal
-        || a.querySelector('.coursename a')?.textContent || '').trim().toLowerCase();
-      const nameB = (customTitles[idB] || b.querySelector('.coursename a')?.dataset?.kbOriginal
-        || b.querySelector('.coursename a')?.textContent || '').trim().toLowerCase();
-      return nameA.localeCompare(nameB, 'ru');
-    });
+    if (_features.sortAlpha) {
+      boxes.sort((a, b) => {
+        const idA = a.dataset.courseid;
+        const idB = b.dataset.courseid;
+        const nameA = (customTitles[idA] || a.querySelector('.coursename a')?.dataset?.kbOriginal
+          || a.querySelector('.coursename a')?.textContent || '').trim().toLowerCase();
+        const nameB = (customTitles[idB] || b.querySelector('.coursename a')?.dataset?.kbOriginal
+          || b.querySelector('.coursename a')?.textContent || '').trim().toLowerCase();
+        return nameA.localeCompare(nameB, 'ru');
+      });
 
-    // Переставить узлы в отсортированном порядке (без удаления из DOM)
-    boxes.forEach(box => parent.appendChild(box));
+      // Переставить узлы в отсортированном порядке (без удаления из DOM)
+      boxes.forEach(box => parent.appendChild(box));
+    }
 
-    // Переназначить классы odd/even/first/last по новой позиции
+    // Переназначить классы odd/even/first/last по текущей позиции
+    const oddEven = _features.swapOddEven ? ['even', 'odd'] : ['odd', 'even'];
     boxes.forEach((box, i) => {
       box.classList.remove('odd', 'even', 'first', 'last');
-      box.classList.add(i % 2 === 0 ? 'even' : 'odd');
-      if (i === 0)              box.classList.add('first');
+      box.classList.add(oddEven[i % 2]);
+      if (i === 0)               box.classList.add('first');
       if (i === boxes.length - 1) box.classList.add('last');
     });
   });
@@ -518,12 +529,16 @@ async function cancelEditMode() {
 async function initMainPage() {
   const cfg = await adapter.getMultiple([
     'editMode', 'hiddenItems', 'customTitles', 'itemColors',
+    'featureSortAlpha', 'featureSwapOddEven',
   ]);
 
   _editState.hiddenItems  = cfg.hiddenItems  || {};
   _editState.customTitles = cfg.customTitles || {};
   _editState.itemColors   = cfg.itemColors   || {};
   _editMode               = cfg.editMode     ?? false;
+
+  _features.sortAlpha   = cfg.featureSortAlpha   ?? true;
+  _features.swapOddEven = cfg.featureSwapOddEven ?? true;
 
   if (_editMode) {
     document.body.classList.add('kb-edit-mode');
@@ -568,6 +583,15 @@ extAPI.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
     case 'hideCourseCategoryComboChanged':
       applyCourseCategoryComboVisibility(message.value);
+      sendResponse && sendResponse({ ok: true });
+      break;
+
+    case 'featuresChanged':
+      if (message.features.sortAlpha   !== undefined) _features.sortAlpha   = message.features.sortAlpha;
+      if (message.features.swapOddEven !== undefined) _features.swapOddEven = message.features.swapOddEven;
+      if (isMainPage) {
+        processAllCourseBoxes(_editState.hiddenItems, _editState.customTitles, _editState.itemColors);
+      }
       sendResponse && sendResponse({ ok: true });
       break;
   }

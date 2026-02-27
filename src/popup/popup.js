@@ -20,6 +20,8 @@ const themeSelect                 = document.getElementById('theme-select');
 const accentSelect                = document.getElementById('accent-select');
 const themeOptionsBlock           = document.getElementById('theme-options');
 const hideCourseCategoryComboCheckbox = document.getElementById('hide-course-category-combo-checkbox');
+const featureSortAlphaCheckbox        = document.getElementById('feature-sort-alpha-checkbox');
+const featureSwapOddEvenCheckbox      = document.getElementById('feature-swap-odd-even-checkbox');
 
 // ── Отправка сообщения в content-script активной вкладки ────────────────────
 async function sendToContentScript(message) {
@@ -53,13 +55,17 @@ async function loadSettings() {
     'theme',
     'accent',
     'hideCourseCategoryCombo',
+    'featureSortAlpha',
+    'featureSwapOddEven',
   ]);
 
   setEditModeButtons(cfg.editMode ?? false);
-  themeEnabledCheckbox.checked         = cfg.themeEnabled         ?? false;
-  themeSelect.value                    = cfg.theme                ?? 'system';
-  accentSelect.value                   = cfg.accent               ?? 'violet';
+  themeEnabledCheckbox.checked            = cfg.themeEnabled            ?? false;
+  themeSelect.value                       = cfg.theme                   ?? 'system';
+  accentSelect.value                      = cfg.accent                  ?? 'violet';
   hideCourseCategoryComboCheckbox.checked = cfg.hideCourseCategoryCombo ?? false;
+  featureSortAlphaCheckbox.checked        = cfg.featureSortAlpha        ?? true;
+  featureSwapOddEvenCheckbox.checked      = cfg.featureSwapOddEven      ?? true;
 
   setThemeOptionsVisible(themeEnabledCheckbox.checked);
 }
@@ -112,6 +118,20 @@ hideCourseCategoryComboCheckbox.addEventListener('change', async () => {
   const hide = hideCourseCategoryComboCheckbox.checked;
   await adapter.set('hideCourseCategoryCombo', hide);
   await sendToContentScript({ type: 'hideCourseCategoryComboChanged', value: hide });
+});
+
+// Фича: сортировка по алфавиту
+featureSortAlphaCheckbox.addEventListener('change', async () => {
+  const value = featureSortAlphaCheckbox.checked;
+  await adapter.set('featureSortAlpha', value);
+  await sendToContentScript({ type: 'featuresChanged', features: { sortAlpha: value } });
+});
+
+// Фича: поменять odd/even местами
+featureSwapOddEvenCheckbox.addEventListener('change', async () => {
+  const value = featureSwapOddEvenCheckbox.checked;
+  await adapter.set('featureSwapOddEven', value);
+  await sendToContentScript({ type: 'featuresChanged', features: { swapOddEven: value } });
 });
 
 // ── Инициализация ───────────────────────────────────────────────────────────
