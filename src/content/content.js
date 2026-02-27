@@ -407,8 +407,6 @@ function createBulkToolbar() {
 
 // Сортировать .coursebox внутри каждого родительского контейнера по отображаемому названию
 function sortCourseBoxes(customTitles) {
-  if (!_features.sortAlpha && !_features.swapOddEven) return;
-
   // Собираем уникальные родительские контейнеры с карточками
   const parents = new Set();
   document.querySelectorAll('.coursebox[data-courseid]').forEach(box => {
@@ -419,7 +417,15 @@ function sortCourseBoxes(customTitles) {
     const boxes = Array.from(parent.querySelectorAll(':scope > .coursebox[data-courseid]'));
     if (boxes.length < 2) return;
 
+    // Запомнить исходный порядок при первом вызове
+    boxes.forEach((box, i) => {
+      if (box.dataset.kbOriginalIndex === undefined) {
+        box.dataset.kbOriginalIndex = i;
+      }
+    });
+
     if (_features.sortAlpha) {
+      // Сортировка по алфавиту
       boxes.sort((a, b) => {
         const idA = a.dataset.courseid;
         const idB = b.dataset.courseid;
@@ -429,18 +435,22 @@ function sortCourseBoxes(customTitles) {
           || b.querySelector('.coursename a')?.textContent || '').trim().toLowerCase();
         return nameA.localeCompare(nameB, 'ru');
       });
-
-      // Переставить узлы в отсортированном порядке (без удаления из DOM)
-      boxes.forEach(box => parent.appendChild(box));
+    } else {
+      // Восстановить исходный порядок
+      boxes.sort((a, b) => Number(a.dataset.kbOriginalIndex) - Number(b.dataset.kbOriginalIndex));
     }
 
-    // Переназначить классы odd/even/first/last по текущей позиции
+    // Переставить узлы в нужном порядке (без удаления из DOM)
+    boxes.forEach(box => parent.appendChild(box));
+
+    // Переназначить классы odd/even/first/last только для видимых элементов
     const oddEven = _features.swapOddEven ? ['even', 'odd'] : ['odd', 'even'];
-    boxes.forEach((box, i) => {
-      box.classList.remove('odd', 'even', 'first', 'last');
+    const visibleBoxes = boxes.filter(box => !box.classList.contains('kb-hidden-item'));
+    boxes.forEach(box => box.classList.remove('odd', 'even', 'first', 'last'));
+    visibleBoxes.forEach((box, i) => {
       box.classList.add(oddEven[i % 2]);
-      if (i === 0)               box.classList.add('first');
-      if (i === boxes.length - 1) box.classList.add('last');
+      if (i === 0)                      box.classList.add('first');
+      if (i === visibleBoxes.length - 1) box.classList.add('last');
     });
 
     // Блок «Все курсы» всегда должен быть последним дочерним элементом
