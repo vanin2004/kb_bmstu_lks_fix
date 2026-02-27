@@ -442,6 +442,11 @@ function sortCourseBoxes(customTitles) {
       if (i === 0)               box.classList.add('first');
       if (i === boxes.length - 1) box.classList.add('last');
     });
+
+    // Блок «Все курсы» всегда должен быть последним дочерним элементом
+    parent.querySelectorAll(':scope > .paging.paging-morelink').forEach(el => {
+      parent.appendChild(el);
+    });
   });
 }
 
