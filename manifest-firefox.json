@@ -1,5 +1,5 @@
 {
-  "manifest_version": 3,
+  "manifest_version": 2,
   "name": "kb_bmstu_lks_fix",
   "version": "1.0.0",
   "description": "Улучшение интерфейса учебного портала МГТУ им. Н.Э. Баумана (Калужский филиал)",
@@ -8,7 +8,7 @@
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
-  "action": {
+  "browser_action": {
     "default_popup": "src/popup/popup.html",
     "default_icon": {
       "16": "icons/icon16.png",
@@ -20,7 +20,8 @@
   "permissions": [
     "storage",
     "activeTab",
-    "tabs"
+    "tabs",
+    "*://e-learning.bmstu.ru/kaluga/*"
   ],
   "content_scripts": [
     {
@@ -36,12 +37,12 @@
     }
   ],
   "web_accessible_resources": [
-    {
-      "resources": ["src/styles/theme-override.css"],
-      "matches": [
-        "https://e-learning.bmstu.ru/*",
-        "http://e-learning.bmstu.ru/*"
-      ]
+    "src/styles/theme-override.css"
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "kb_bmstu_lks_fix@extension",
+      "strict_min_version": "57.0"
     }
-  ]
+  }
 }

@@ -1,161 +1,97 @@
-// popup.js — логика интерфейса расширения "Компактный Универ"
-// Использует StorageAdapter через content_scripts
+/**
+ * popup.js — логика интерфейса расширения
+ *
+ * Загружается после storage.js, поэтому window.storageAdapter уже доступен.
+ */
 
-// --- DOM элементы ---
-const editModeCb      = document.getElementById('edit-mode-cb');
-const compactModeCb   = document.getElementById('compact-mode-cb');
-const themeSelect     = document.getElementById('theme-select');
-const accentSwatches  = document.querySelectorAll('.accent-swatch');
-const drawerCb        = document.getElementById('drawer-cb');
-const elsCb           = document.getElementById('els-cb');
-const customCssToggle = document.getElementById('custom-css-toggle');
-const customCssBody   = document.getElementById('custom-css-body');
-const customCssTa     = document.getElementById('custom-css-ta');
-const saveCssBtn      = document.getElementById('save-css-btn');
-const resetBtn        = document.getElementById('reset-btn');
-const statusMsg       = document.getElementById('status-msg');
+'use strict';
 
-// --- Состояние ---
-let state = {
-  editMode:   false,
-  compactMode: false,
-  theme:      'system',
-  accent:     'violet',
-  drawer:     false,
-  els:        false,
-  customCSS:  '',
-};
+// ── Кросс-браузерный API ────────────────────────────────────────────────────
+const extAPI = (typeof browser !== 'undefined') ? browser : chrome;
+const adapter = window.storageAdapter;
 
-// --- Инициализация ---
-async function init() {
-  const data = await StorageAdapter.getMultiple([
-    'editMode', 'compactMode', 'theme', 'accent', 'drawer', 'els', 'customCSS',
-  ]);
+// ── Ссылки на элементы DOM ──────────────────────────────────────────────────
+const editModeCheckbox            = document.getElementById('edit-mode-checkbox');
+const themeEnabledCheckbox        = document.getElementById('theme-enabled-checkbox');
+const themeSelect                 = document.getElementById('theme-select');
+const accentSelect                = document.getElementById('accent-select');
+const themeOptionsBlock           = document.getElementById('theme-options');
+const hideUniversityHeaderCheckbox = document.getElementById('hide-university-header-checkbox');
 
-  state.editMode    = !!data.editMode;
-  state.compactMode = !!data.compactMode;
-  state.theme       = data.theme   || 'system';
-  state.accent      = data.accent  || 'violet';
-  state.drawer      = !!data.drawer;
-  state.els         = !!data.els;
-  state.customCSS   = data.customCSS || '';
-
-  editModeCb.checked    = state.editMode;
-  compactModeCb.checked = state.compactMode;
-  themeSelect.value     = state.theme;
-  drawerCb.checked      = state.drawer;
-  elsCb.checked         = state.els;
-  customCssTa.value     = state.customCSS;
-
-  _updateAccentUI(state.accent);
-}
-
-// --- Обновить подсветку выбранного акцента ---
-function _updateAccentUI(accent) {
-  accentSwatches.forEach(btn => {
-    const active = btn.dataset.accent === accent;
-    btn.classList.toggle('active', active);
-    btn.setAttribute('aria-pressed', String(active));
-  });
-}
-
-// --- Перезагрузить активную вкладку ---
-async function reloadActivePage() {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (tab) chrome.tabs.reload(tab.id);
-}
-
-// --- Показать статусное сообщение ---
-function showStatus(msg) {
-  statusMsg.textContent = msg;
-  statusMsg.hidden = false;
-  setTimeout(() => { statusMsg.hidden = true; }, 1800);
-}
-
-// --- Collapsible: раскрытие/закрытие панели кастомного CSS ---
-customCssToggle.addEventListener('click', () => {
-  const expanded = customCssToggle.getAttribute('aria-expanded') === 'true';
-  customCssToggle.setAttribute('aria-expanded', String(!expanded));
-  customCssBody.hidden = expanded;
-});
-
-// --- Акцентные кружки ---
-accentSwatches.forEach(btn => {
-  btn.addEventListener('click', async () => {
-    state.accent = btn.dataset.accent;
-    _updateAccentUI(state.accent);
-    await StorageAdapter.set('accent', state.accent);
-    reloadActivePage();
-  });
-});
-
-// --- Тема ---
-themeSelect.onchange = async () => {
-  state.theme = themeSelect.value;
-  await StorageAdapter.set('theme', state.theme);
-  reloadActivePage();
-};
-
-// --- Боковая панель (drawer) ---
-drawerCb.onchange = async () => {
-  state.drawer = drawerCb.checked;
-  await StorageAdapter.set('drawer', state.drawer);
-  reloadActivePage();
-};
-
-// --- Короткий заголовок (els) ---
-elsCb.onchange = async () => {
-  state.els = elsCb.checked;
-  await StorageAdapter.set('els', state.els);
-  reloadActivePage();
-};
-
-// --- Сохранить кастомный CSS ---
-saveCssBtn.addEventListener('click', async () => {
-  state.customCSS = customCssTa.value;
-  await StorageAdapter.set('customCSS', state.customCSS);
-  showStatus('CSS сохранён!');
-  reloadActivePage();
-});
-
-// --- Режим редактирования ---
-editModeCb.onchange = async () => {
-  state.editMode = editModeCb.checked;
-  await StorageAdapter.set('editMode', state.editMode);
-  reloadActivePage();
-};
-
-// --- Компактный режим ---
-compactModeCb.onchange = async () => {
-  state.compactMode = compactModeCb.checked;
-  await StorageAdapter.set('compactMode', state.compactMode);
-  reloadActivePage();
-};
-
-// --- Сброс настроек ---
-resetBtn.onclick = async () => {
-  if (!confirm('Вы уверены, что хотите сбросить все настройки (скрытые предметы, цвета, названия)?')) {
-    return;
+// ── Отправка сообщения в content-script активной вкладки ────────────────────
+async function sendToContentScript(message) {
+  try {
+    const tabs = await extAPI.tabs.query({ active: true, currentWindow: true });
+    if (tabs && tabs[0]) {
+      await extAPI.tabs.sendMessage(tabs[0].id, message);
+    }
+  } catch (e) {
+    // Страница может не совпадать с matches → content script не загружен
+    console.warn('[kb_bmstu_lks_fix] sendMessage:', e.message || e);
   }
+}
 
-  await StorageAdapter.remove([
+// ── Показать/скрыть блок настроек темы ─────────────────────────────────────
+function setThemeOptionsVisible(visible) {
+  themeOptionsBlock.style.display = visible ? '' : 'none';
+}
+
+// ── Загрузка настроек из хранилища ─────────────────────────────────────────
+async function loadSettings() {
+  const cfg = await adapter.getMultiple([
     'editMode',
-    'compactMode',
+    'themeEnabled',
     'theme',
     'accent',
-    'drawer',
-    'els',
-    'customCSS',
-    'hiddenItems',
-    'customTitles',
-    'itemColors',
-    'knownItems',
+    'hideUniversityHeader',
   ]);
 
-  showStatus('Сброшено!');
-  reloadActivePage();
-  init();
-};
+  editModeCheckbox.checked             = cfg.editMode             ?? false;
+  themeEnabledCheckbox.checked         = cfg.themeEnabled         ?? false;
+  themeSelect.value                    = cfg.theme                ?? 'system';
+  accentSelect.value                   = cfg.accent               ?? 'violet';
+  hideUniversityHeaderCheckbox.checked = cfg.hideUniversityHeader ?? false;
 
-// --- Запуск ---
-document.addEventListener('DOMContentLoaded', init);
+  setThemeOptionsVisible(themeEnabledCheckbox.checked);
+}
+
+// ── Обработчики событий ─────────────────────────────────────────────────────
+
+// Режим редактирования
+editModeCheckbox.addEventListener('change', async () => {
+  const editMode = editModeCheckbox.checked;
+  await adapter.set('editMode', editMode);
+  await sendToContentScript({ type: 'editModeChanged', editMode });
+});
+
+// Включение/отключение темы
+themeEnabledCheckbox.addEventListener('change', async () => {
+  const enabled = themeEnabledCheckbox.checked;
+  await adapter.set('themeEnabled', enabled);
+  setThemeOptionsVisible(enabled);
+  await sendToContentScript({ type: 'themeChanged', key: 'themeEnabled', value: enabled });
+});
+
+// Выбор цветовой схемы
+themeSelect.addEventListener('change', async () => {
+  const theme = themeSelect.value;
+  await adapter.set('theme', theme);
+  await sendToContentScript({ type: 'themeChanged', key: 'theme', value: theme });
+});
+
+// Выбор акцентного цвета
+accentSelect.addEventListener('change', async () => {
+  const accent = accentSelect.value;
+  await adapter.set('accent', accent);
+  await sendToContentScript({ type: 'themeChanged', key: 'accent', value: accent });
+});
+
+// Скрытие заголовка университета
+hideUniversityHeaderCheckbox.addEventListener('change', async () => {
+  const hide = hideUniversityHeaderCheckbox.checked;
+  await adapter.set('hideUniversityHeader', hide);
+  await sendToContentScript({ type: 'hideUniversityHeaderChanged', value: hide });
+});
+
+// ── Инициализация ───────────────────────────────────────────────────────────
+loadSettings();

@@ -1,135 +1,86 @@
 <!DOCTYPE html>
-<html lang="ru" dir="ltr">
+<html lang="ru">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Компактный Универ</title>
+    <title>kb_bmstu_lks_fix</title>
     <link rel="stylesheet" href="popup.css">
 </head>
 
 <body>
-    <div class="popup-wrap">
+    <div class="popup-container">
 
-        <!-- Шапка -->
-        <header class="popup-header">
-            <img src="../../icons/icon48.png" alt="" class="popup-logo" aria-hidden="true">
-            <div class="popup-title-block">
-                <h1 class="popup-title">Компактный Универ</h1>
-                <span class="popup-subtitle">ЭОС МГТУ им. Н.Э. Баумана</span>
+        <!-- Header -->
+        <div class="popup-header">
+            <img src="../../icons/icon48.png" alt="icon" class="popup-icon">
+            <div>
+                <div class="popup-title">LKS Fix</div>
+                <div class="popup-subtitle">МГТУ Калуга</div>
             </div>
-        </header>
+        </div>
 
-        <!-- Основные переключатели -->
-        <section class="popup-section" aria-label="Основные настройки">
-
-            <label class="toggle-row" for="edit-mode-cb" title="Показывает элементы редактирования на карточках курсов">
-                <span class="toggle-icon">✏️</span>
-                <span class="toggle-text">Режим редактирования</span>
-                <span class="toggle-spacer"></span>
-                <div class="switch-wrap">
-                    <input type="checkbox" id="edit-mode-cb" class="switch-input" role="switch">
-                    <span class="switch-track"></span>
-                </div>
+        <!-- Режим редактирования -->
+        <div class="popup-section">
+            <label class="toggle-label" title="Включает элементы управления на карточках предметов">
+                <input type="checkbox" id="edit-mode-checkbox">
+                <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                <span class="label-text">Режим редактирования</span>
             </label>
+        </div>
 
-            <label class="toggle-row" for="compact-mode-cb" title="Скрывает служебные и ненужные блоки на странице">
-                <span class="toggle-icon">🗜️</span>
-                <span class="toggle-text">Компактный режим</span>
-                <span class="toggle-spacer"></span>
-                <div class="switch-wrap">
-                    <input type="checkbox" id="compact-mode-cb" class="switch-input" role="switch">
-                    <span class="switch-track"></span>
-                </div>
-            </label>
-
-        </section>
+        <hr class="divider">
 
         <!-- Тема оформления -->
-        <section class="popup-section" aria-label="Тема оформления">
+        <div class="popup-section">
+            <div class="section-title">Тема оформления</div>
 
-            <div class="field-row">
-                <label for="theme-select" class="field-label">
-                    <span class="toggle-icon">🎨</span> Тема
-                </label>
-                <select id="theme-select" class="field-select" aria-label="Выберите тему">
-                    <option value="system">Системная</option>
-                    <option value="light">Светлая</option>
-                    <option value="dark">Тёмная</option>
-                </select>
-            </div>
-
-            <div class="field-row" style="margin-top:8px">
-                <span class="field-label">
-                    <span class="toggle-icon">🖌️</span> Акцент
-                </span>
-                <div class="accent-row" id="accent-swatches" role="group" aria-label="Цвет акцента">
-                    <button type="button" class="accent-swatch" data-accent="violet" style="--sc:#694fa3" title="Фиолетовый" aria-label="Фиолетовый"></button>
-                    <button type="button" class="accent-swatch" data-accent="blue"   style="--sc:#00658b" title="Синий"       aria-label="Синий"></button>
-                    <button type="button" class="accent-swatch" data-accent="pink"   style="--sc:#95416e" title="Розовый"     aria-label="Розовый"></button>
-                    <button type="button" class="accent-swatch" data-accent="red"    style="--sc:#9c4235" title="Красный"     aria-label="Красный"></button>
-                    <button type="button" class="accent-swatch" data-accent="green"  style="--sc:#006c4b" title="Зелёный"     aria-label="Зелёный"></button>
-                </div>
-            </div>
-
-            <label class="toggle-row" for="drawer-cb" title="Современный сворачиваемый вид боковой панели" style="margin-top:8px">
-                <span class="toggle-icon">📋</span>
-                <span class="toggle-text">Современная боковая панель</span>
-                <span class="toggle-spacer"></span>
-                <div class="switch-wrap">
-                    <input type="checkbox" id="drawer-cb" class="switch-input" role="switch">
-                    <span class="switch-track"></span>
-                </div>
+            <label class="toggle-label">
+                <input type="checkbox" id="theme-enabled-checkbox">
+                <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                <span class="label-text">Включить кастомную тему</span>
             </label>
 
-            <label class="toggle-row" for="els-cb" title="Показывает короткий вариант заголовка страницы">
-                <span class="toggle-icon">📝</span>
-                <span class="toggle-text">Короткий заголовок страницы</span>
-                <span class="toggle-spacer"></span>
-                <div class="switch-wrap">
-                    <input type="checkbox" id="els-cb" class="switch-input" role="switch">
-                    <span class="switch-track"></span>
+            <div class="theme-options" id="theme-options">
+                <div class="select-row">
+                    <label for="theme-select">Цветовая схема</label>
+                    <select id="theme-select">
+                        <option value="system">Системная</option>
+                        <option value="light">Светлая</option>
+                        <option value="dark">Тёмная</option>
+                    </select>
                 </div>
-            </label>
 
-        </section>
-
-        <!-- Кастомный CSS -->
-        <section class="popup-section" aria-label="Кастомный CSS">
-
-            <button type="button" class="collapsible-header" id="custom-css-toggle"
-                    aria-expanded="false" aria-controls="custom-css-body">
-                <span class="toggle-icon">✏️</span>
-                <span class="collapsible-title">Кастомный CSS</span>
-                <span class="toggle-spacer"></span>
-                <span class="chevron" aria-hidden="true">▸</span>
-            </button>
-
-            <div class="collapsible-body" id="custom-css-body" hidden>
-                <textarea
-                    id="custom-css-ta"
-                    class="css-textarea"
-                    spellcheck="false"
-                    placeholder="/* Ваш CSS поверх темы */"
-                    aria-label="Кастомный CSS"></textarea>
-                <div class="css-actions">
-                    <button id="save-css-btn" class="btn btn-save" type="button">💾 Сохранить</button>
+                <div class="select-row">
+                    <label for="accent-select">Акцентный цвет</label>
+                    <select id="accent-select">
+                        <option value="violet">🟣 Фиолетовый</option>
+                        <option value="blue">🔵 Синий</option>
+                        <option value="pink">🩷 Розовый</option>
+                        <option value="red">🔴 Красный</option>
+                        <option value="green">🟢 Зелёный</option>
+                    </select>
                 </div>
             </div>
+        </div>
 
-        </section>
+        <hr class="divider">
 
-        <!-- Кнопка сброса -->
-        <div class="popup-footer">
-            <button id="reset-btn" class="btn btn-ghost btn-reset" type="button">
-                🔄 Сброс настроек
-            </button>
-            <div id="status-msg" class="status-msg" role="status" aria-live="polite" hidden></div>
+        <!-- Компактный вид -->
+        <div class="popup-section">
+            <div class="section-title">Компактный вид</div>
+
+            <label class="checkbox-label"
+                title="Скрывает блок «Калужский филиал МГТУ им. Н.Э. Баумана» в шапке страницы">
+                <input type="checkbox" id="hide-university-header-checkbox">
+                <span class="label-text">Скрыть заголовок университета</span>
+            </label>
         </div>
 
     </div>
 
-    <script src="../content/modules/storage-adapter.js"></script>
+    <!-- storage.js должен грузиться первым, чтобы window.storageAdapter был доступен -->
+    <script src="../storage.js"></script>
     <script src="popup.js"></script>
 </body>
 

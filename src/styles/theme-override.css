@@ -6,10 +6,7 @@ Set data-attributes on <html> to control appearance:
 
   data-theme    = "system" | "light" | "dark"
   data-accent   = "violet" | "blue" | "pink" | "red" | "green"
-  data-els      = "1"          (short header text)
   data-drawer   = "1"          (modern collapsible drawer)
-  data-kf       = "1"          (Kaluga branch)
-  data-bmstu    = "1"          (replace heading, requires data-kf=1)
 
 Example JS:
   const h = document.documentElement;
@@ -2714,23 +2711,6 @@ Example JS:
 
 
     /* Variables */
-    
-/* ── if els==1 → html[data-els="1"] ── */
-
-        html[data-els="1"] .site-name.d-none.d-sm-block {
-
-            font-weight: bold;
-            font-size: 0;
-        }
-
-        html[data-els="1"] .navbar-light .navbar-brand .site-name.d-none.d-sm-block:after {
-            content: "ЭОС";
-            font-weight: 600;
-            display: flex !important;
-            font-size: 28px !important;
-        }
-
-    /* ── end els==1 ── */
 
 
 
@@ -2887,23 +2867,5 @@ html[data-drawer="1"] #nav-drawer.closed #nav-drawer.closed > .list-group {
 
     /* ── end drawer==1 ── */
 
-
-    /* Header Text */
-    
-/* ── if kf==1 → html[data-kf="1"] ── */
-
-        
-            html[data-kf="1"][data-bmstu="1"] div.page-context-header div.page-header-headings h1::before {
-                content: "МГТУ им. Н.Э. Баумана";
-                font-family: Montserrat;
-                font-size: 24px;
-            }
-
-            html[data-kf="1"][data-bmstu="1"] div.page-context-header div.page-header-headings h1 {
-                font-size: 0;
-            }
-
-        
-    /* ── end kf==1 ── */
 
 
