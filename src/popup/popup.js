@@ -25,6 +25,12 @@ const hideEnrolIconCheckbox            = document.getElementById('hide-enrol-ico
 const hideMainPageHeaderCheckbox       = document.getElementById('hide-main-page-header-checkbox');
 const featureSortAlphaCheckbox        = document.getElementById('feature-sort-alpha-checkbox');
 const featureSwapOddEvenCheckbox      = document.getElementById('feature-swap-odd-even-checkbox');
+const featureAutoFilenameCheckbox     = document.getElementById('feature-auto-filename-checkbox');
+const studentInfoOptions              = document.getElementById('student-info-options');
+const studentLastnameInput            = document.getElementById('student-lastname-input');
+const studentFirstnameInput           = document.getElementById('student-firstname-input');
+const studentMiddlenameInput          = document.getElementById('student-middlename-input');
+const studentGroupInput               = document.getElementById('student-group-input');
 
 // ── Отправка сообщения в content-script активной вкладки ────────────────────
 async function sendToContentScript(message) {
@@ -42,6 +48,11 @@ async function sendToContentScript(message) {
 // ── Показать/скрыть блок настроек темы ─────────────────────────────────────
 function setThemeOptionsVisible(visible) {
   themeOptionsBlock.style.display = visible ? '' : 'none';
+}
+
+// ── Показать/скрыть блок данных студента ─────────────────────────────
+function setStudentInfoVisible(visible) {
+  studentInfoOptions.style.display = visible ? '' : 'none';
 }
 
 // ── Переключить вид кнопок режима редактирования ────────────────────────────
@@ -75,6 +86,11 @@ async function loadSettings() {
     'hideMainPageHeader',
     'featureSortAlpha',
     'featureSwapOddEven',
+    'featureAutoFilename',
+    'studentLastname',
+    'studentFirstname',
+    'studentMiddlename',
+    'studentGroup',
   ]);
 
   setEditModeButtons(cfg.editMode ?? false);
@@ -87,8 +103,14 @@ async function loadSettings() {
   hideMainPageHeaderCheckbox.checked       = cfg.hideMainPageHeader       ?? false;
   featureSortAlphaCheckbox.checked        = cfg.featureSortAlpha        ?? true;
   featureSwapOddEvenCheckbox.checked      = cfg.featureSwapOddEven      ?? true;
+  featureAutoFilenameCheckbox.checked     = cfg.featureAutoFilename     ?? false;
+  studentLastnameInput.value              = cfg.studentLastname          ?? '';
+  studentFirstnameInput.value             = cfg.studentFirstname         ?? '';
+  studentMiddlenameInput.value            = cfg.studentMiddlename        ?? '';
+  studentGroupInput.value                 = cfg.studentGroup             ?? '';
 
   setThemeOptionsVisible(themeEnabledCheckbox.checked);
+  setStudentInfoVisible(featureAutoFilenameCheckbox.checked);
   applyPopupTheme(
     cfg.themeEnabled ?? false,
     cfg.theme        ?? 'system',
@@ -182,6 +204,27 @@ featureSwapOddEvenCheckbox.addEventListener('change', async () => {
   const value = featureSwapOddEvenCheckbox.checked;
   await adapter.set('featureSwapOddEven', value);
   await sendToContentScript({ type: 'featuresChanged', features: { swapOddEven: value } });
+});
+
+// Фича: автозаполнение имени файла
+featureAutoFilenameCheckbox.addEventListener('change', async () => {
+  const value = featureAutoFilenameCheckbox.checked;
+  await adapter.set('featureAutoFilename', value);
+  setStudentInfoVisible(value);
+  await sendToContentScript({ type: 'featureAutoFilenameChanged', value });
+});
+
+// Данные студента — сохраняем при потере фокуса / нажатии Enter
+[
+  ['studentLastname',   studentLastnameInput],
+  ['studentFirstname',  studentFirstnameInput],
+  ['studentMiddlename', studentMiddlenameInput],
+  ['studentGroup',      studentGroupInput],
+].forEach(([key, input]) => {
+  input.addEventListener('change', async () => {
+    await adapter.set(key, input.value);
+    await sendToContentScript({ type: 'studentInfoChanged', key, value: input.value });
+  });
 });
 
 // ── Инициализация ───────────────────────────────────────────────────────────

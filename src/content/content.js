@@ -39,6 +39,16 @@ let _features = {
   swapOddEven:  true,
 };
 
+// Данные студента для автоименования файла
+let _studentInfo = {
+  lastname:   '',
+  firstname:  '',
+  middlename: '',
+  group:      '',
+};
+
+let _featureAutoFilename = false;
+
 // ── Утилиты ─────────────────────────────────────────────────────────────────
 function applyTheme(themeEnabled, theme, accent) {
   // CSS загружен через content_scripts — достаточно управлять data-атрибутами
@@ -633,6 +643,163 @@ async function initCompactSettings() {
   applyMainPageHeaderVisibility(!!cfg.hideMainPageHeader);
 }
 
+// ── Автозаполнение имени файла в диалоге загрузки ────────────────────────────
+
+const KB_AUTONAME_ID = 'kb-autoname-panel';
+
+/**
+ * Строит строку имени файла: ФамилияИО_Группа_Работа_Год.расш
+ */
+function buildFilename(workTitle, originalFilename) {
+  const { lastname, firstname, middlename, group } = _studentInfo;
+  const last  = lastname.trim();
+  const initF = firstname.trim()  ? firstname.trim()[0].toUpperCase()  : '';
+  const initM = middlename.trim() ? middlename.trim()[0].toUpperCase() : '';
+  const fio   = last + (initF ? initF : '') + (initM ? initM: '');
+
+  const grp  = group.trim().replace(/[\s\-]+/g, '_').toUpperCase();
+  const work = workTitle.trim().replace(/[\s\-]+/g, '_').toUpperCase();
+  const year = String(new Date().getFullYear());
+
+  // Расширение из оригинального имени файла
+  const extMatch = originalFilename ? originalFilename.match(/(\.[^.]+)$/) : null;
+  const ext = extMatch ? extMatch[1] : '';
+
+  const parts = [fio, grp, work, year].filter(Boolean);
+  return parts.join('_') + ext;
+}
+
+/**
+ * Инъектирует панель «Название работы + Заполнить» в форму загрузки файла.
+ * Вызывается каждый раз, когда в DOM появляется .fp-upload-form.
+ */
+function injectAutoFilenamePanel(uploadForm) {
+  if (!_featureAutoFilename) return;
+  if (uploadForm.querySelector('#' + KB_AUTONAME_ID)) return;
+
+  // Находим поле «Сохранить как» (.fp-saveas)
+  const saveAsGroup = uploadForm.querySelector('.fp-saveas');
+  const saveAsInput = uploadForm.querySelector('.fp-saveas input[name="title"]');
+  const fileInput   = uploadForm.querySelector('input[type="file"]');
+  if (!saveAsGroup) return;
+
+  const panel = document.createElement('div');
+  panel.id = KB_AUTONAME_ID;
+  panel.className = 'kb-autoname-panel';
+
+  const row = document.createElement('div');
+  row.className = 'kb-autoname-row';
+
+  const workInput = document.createElement('input');
+  workInput.type = 'text';
+  workInput.className = 'kb-autoname-input';
+  workInput.placeholder = 'Название работы';
+
+  const fillBtn = document.createElement('button');
+  fillBtn.type = 'button';
+  fillBtn.className = 'kb-btn kb-autoname-fill-btn';
+  fillBtn.textContent = 'Заполнить';
+  fillBtn.addEventListener('click', () => {
+    const originalName = fileInput ? fileInput.files[0]?.name || '' : '';
+    const name = buildFilename(workInput.value, originalName);
+    if (saveAsInput && name) {
+      saveAsInput.value = name;
+      // Оповестить Moodle об изменении значения (YUI может слушать input-событие)
+      saveAsInput.dispatchEvent(new Event('input', { bubbles: true }));
+      saveAsInput.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+  });
+
+  row.appendChild(workInput);
+  row.appendChild(fillBtn);
+  panel.appendChild(row);
+
+  // Вставляем панель перед блоком «Сохранить как»
+  saveAsGroup.insertAdjacentElement('beforebegin', panel);
+}
+
+/**
+ * Наблюдает за DOM: ждёт появления .fp-upload-form в любом файл-пикере.
+ */
+let _autoFilenameObserver = null;
+
+function startAutoFilenameObserver() {
+  if (_autoFilenameObserver) return;
+
+  // Обработать уже существующие формы
+  document.querySelectorAll('.fp-upload-form').forEach(injectAutoFilenamePanel);
+
+  _autoFilenameObserver = new MutationObserver(mutations => {
+    for (const mutation of mutations) {
+      for (const node of mutation.addedNodes) {
+        if (!(node instanceof Element)) continue;
+        // Сам узел может быть формой или содержать форму
+        if (node.classList && node.classList.contains('fp-upload-form')) {
+          injectAutoFilenamePanel(node);
+        } else {
+          node.querySelectorAll('.fp-upload-form').forEach(injectAutoFilenamePanel);
+        }
+      }
+    }
+  });
+
+  _autoFilenameObserver.observe(document.body, { childList: true, subtree: true });
+}
+
+function stopAutoFilenameObserver() {
+  if (_autoFilenameObserver) {
+    _autoFilenameObserver.disconnect();
+    _autoFilenameObserver = null;
+  }
+  // Удалить все вставленные панели
+  document.querySelectorAll('#' + KB_AUTONAME_ID).forEach(el => el.remove());
+}
+
+async function initAutoFilename() {
+  const cfg = await adapter.getMultiple([
+    'featureAutoFilename',
+    'studentLastname', 'studentFirstname', 'studentMiddlename', 'studentGroup',
+  ]);
+  _featureAutoFilename    = cfg.featureAutoFilename ?? false;
+  _studentInfo.lastname   = cfg.studentLastname   ?? '';
+  _studentInfo.firstname  = cfg.studentFirstname  ?? '';
+  _studentInfo.middlename = cfg.studentMiddlename ?? '';
+  _studentInfo.group      = cfg.studentGroup      ?? '';
+
+  // Автодетект ФИО из шапки страницы, если поля ещё не заполнены
+  if (!_studentInfo.lastname) {
+    const detected = extractStudentNameFromPage();
+    if (detected) {
+      _studentInfo.lastname   = detected.lastname;
+      _studentInfo.firstname  = detected.firstname;
+      _studentInfo.middlename = detected.middlename;
+      await adapter.saveAll({
+        studentLastname:   detected.lastname,
+        studentFirstname:  detected.firstname,
+        studentMiddlename: detected.middlename,
+      });
+    }
+  }
+
+  if (_featureAutoFilename) startAutoFilenameObserver();
+}
+
+/**
+ * Извлекает ФИО текущего пользователя из .logininfo.
+ * Ожидаемый формат текста ссылки: «Фамилия Имя Отчество»
+ */
+function extractStudentNameFromPage() {
+  const link = document.querySelector('.logininfo a[href*="user/profile.php"]');
+  if (!link) return null;
+  const parts = link.textContent.trim().split(/\s+/);
+  if (parts.length < 2) return null;
+  return {
+    lastname:   parts[0] || '',
+    firstname:  parts[1] || '',
+    middlename: parts[2] || '',
+  };
+}
+
 // ── Слушатель сообщений от popup ─────────────────────────────────────────────
 extAPI.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   switch (message.type) {
@@ -687,6 +854,29 @@ extAPI.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       }
       sendResponse && sendResponse({ ok: true });
       break;
+
+    case 'featureAutoFilenameChanged':
+      _featureAutoFilename = message.value;
+      if (_featureAutoFilename) {
+        startAutoFilenameObserver();
+      } else {
+        stopAutoFilenameObserver();
+      }
+      sendResponse && sendResponse({ ok: true });
+      break;
+
+    case 'studentInfoChanged': {
+      const keyMap = {
+        studentLastname:   'lastname',
+        studentFirstname:  'firstname',
+        studentMiddlename: 'middlename',
+        studentGroup:      'group',
+      };
+      const field = keyMap[message.key];
+      if (field) _studentInfo[field] = message.value;
+      sendResponse && sendResponse({ ok: true });
+      break;
+    }
   }
 
   // Возвращаем true для асинхронных обработчиков (Firefox требует)
@@ -700,6 +890,9 @@ extAPI.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
   // Компактные настройки на всех страницах
   await initCompactSettings();
+
+  // Автозаполнение имени файла (работает на всех страницах с диалогом загрузки)
+  await initAutoFilename();
 
   if (isMainPage) {
     await initMainPage();

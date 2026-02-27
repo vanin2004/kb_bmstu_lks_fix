@@ -256,6 +256,53 @@ body.kb-edit-mode .coursebox.kb-hidden-item::after {
   border-color: #ffcc80;
 }
 
+/* ── Панель автозаполнения имени файла (инъекция в .fp-upload-form) ────────── */
+.kb-autoname-panel {
+  margin-bottom: 8px;
+}
+
+.kb-autoname-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.kb-autoname-input {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  font-family: inherit;
+  padding: 5px 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: #fff;
+  color: #222;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.kb-autoname-input:focus {
+  border-color: #694fa3;
+  box-shadow: 0 0 0 2px rgba(105, 79, 163, 0.18);
+}
+
+.kb-autoname-fill-btn {
+  flex-shrink: 0;
+  font-size: 13px;
+  padding: 5px 14px;
+  border-radius: 6px;
+  background: var(--primary, #694fa3);
+}
+
+.kb-autoname-fill-btn:hover {
+  background: var(--primary-zsh, #513689);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.22);
+}
+
+.kb-autoname-fill-btn:active {
+  background: var(--on-primary-container, #3a1d71);
+}
+
 /* ── Блок кастомной информации на страницах предмета / модулей ────────────── */
 .kb-course-info-block {
   display: flex;
