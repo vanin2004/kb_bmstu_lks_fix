@@ -77,6 +77,12 @@ function applyCourseCategoryComboVisibility(hide) {
   block.style.display = hide ? 'none' : '';
 }
 
+function applyPagingMoreLinkVisibility(hide) {
+  document.querySelectorAll('.paging.paging-morelink').forEach(el => {
+    el.style.display = hide ? 'none' : '';
+  });
+}
+
 // ── Идентификатор предмета ───────────────────────────────────────────────────
 function getCourseIdFromUrl(url) {
   const m = (url || location.href).match(/[?&]id=(\d+)/);
@@ -551,8 +557,9 @@ async function initMainPage() {
 
 // ── Обработчик компактного вида ───────────────────────────────────────────────
 async function initCompactSettings() {
-  const hide = await adapter.get('hideCourseCategoryCombo');
-  applyCourseCategoryComboVisibility(!!hide);
+  const cfg = await adapter.getMultiple(['hideCourseCategoryCombo', 'hidePagingMoreLink']);
+  applyCourseCategoryComboVisibility(!!cfg.hideCourseCategoryCombo);
+  applyPagingMoreLinkVisibility(!!cfg.hidePagingMoreLink);
 }
 
 // ── Слушатель сообщений от popup ─────────────────────────────────────────────
@@ -583,6 +590,11 @@ extAPI.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
     case 'hideCourseCategoryComboChanged':
       applyCourseCategoryComboVisibility(message.value);
+      sendResponse && sendResponse({ ok: true });
+      break;
+
+    case 'hidePagingMoreLinkChanged':
+      applyPagingMoreLinkVisibility(message.value);
       sendResponse && sendResponse({ ok: true });
       break;
 

@@ -20,6 +20,7 @@ const themeSelect                 = document.getElementById('theme-select');
 const accentSelect                = document.getElementById('accent-select');
 const themeOptionsBlock           = document.getElementById('theme-options');
 const hideCourseCategoryComboCheckbox = document.getElementById('hide-course-category-combo-checkbox');
+const hidePagingMoreLinkCheckbox       = document.getElementById('hide-paging-morelink-checkbox');
 const featureSortAlphaCheckbox        = document.getElementById('feature-sort-alpha-checkbox');
 const featureSwapOddEvenCheckbox      = document.getElementById('feature-swap-odd-even-checkbox');
 
@@ -55,6 +56,7 @@ async function loadSettings() {
     'theme',
     'accent',
     'hideCourseCategoryCombo',
+    'hidePagingMoreLink',
     'featureSortAlpha',
     'featureSwapOddEven',
   ]);
@@ -64,6 +66,7 @@ async function loadSettings() {
   themeSelect.value                       = cfg.theme                   ?? 'system';
   accentSelect.value                      = cfg.accent                  ?? 'violet';
   hideCourseCategoryComboCheckbox.checked = cfg.hideCourseCategoryCombo ?? false;
+  hidePagingMoreLinkCheckbox.checked       = cfg.hidePagingMoreLink       ?? false;
   featureSortAlphaCheckbox.checked        = cfg.featureSortAlpha        ?? true;
   featureSwapOddEvenCheckbox.checked      = cfg.featureSwapOddEven      ?? true;
 
@@ -118,6 +121,13 @@ hideCourseCategoryComboCheckbox.addEventListener('change', async () => {
   const hide = hideCourseCategoryComboCheckbox.checked;
   await adapter.set('hideCourseCategoryCombo', hide);
   await sendToContentScript({ type: 'hideCourseCategoryComboChanged', value: hide });
+});
+
+// Скрытие ссылки «Все курсы»
+hidePagingMoreLinkCheckbox.addEventListener('change', async () => {
+  const hide = hidePagingMoreLinkCheckbox.checked;
+  await adapter.set('hidePagingMoreLink', hide);
+  await sendToContentScript({ type: 'hidePagingMoreLinkChanged', value: hide });
 });
 
 // Фича: сортировка по алфавиту
