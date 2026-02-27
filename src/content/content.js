@@ -65,16 +65,10 @@ function applyTheme(themeEnabled, theme, accent) {
   html.dataset.accent = accent || 'violet';
 }
 
-function applyUniversityHeaderVisibility(hide) {
-  // Заголовок: .page-context-header h1 = «Калужский филиал…» внутри #page-header
-  const header = document.querySelector('#page-header .page-context-header');
-  if (!header) return;
-
-  // Ищем карточку-обёртку (блок описан в ТЗ)
-  const card = header.closest('.card');
-  if (card) {
-    card.style.display = hide ? 'none' : '';
-  }
+function applyCourseCategoryComboVisibility(hide) {
+  const block = document.getElementById('frontpage-category-combo');
+  if (!block) return;
+  block.style.display = hide ? 'none' : '';
 }
 
 // ── Идентификатор предмета ───────────────────────────────────────────────────
@@ -388,10 +382,10 @@ async function initMainPage() {
   }
 }
 
-// ── Обработчик компактного вида (заголовок университета) ─────────────────────
+// ── Обработчик компактного вида ───────────────────────────────────────────────
 async function initCompactSettings() {
-  const hide = await adapter.get('hideUniversityHeader');
-  applyUniversityHeaderVisibility(!!hide);
+  const hide = await adapter.get('hideCourseCategoryCombo');
+  applyCourseCategoryComboVisibility(!!hide);
 }
 
 // ── Слушатель сообщений от popup ─────────────────────────────────────────────
@@ -416,8 +410,8 @@ extAPI.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       sendResponse && sendResponse({ ok: true });
       break;
 
-    case 'hideUniversityHeaderChanged':
-      applyUniversityHeaderVisibility(message.value);
+    case 'hideCourseCategoryComboChanged':
+      applyCourseCategoryComboVisibility(message.value);
       sendResponse && sendResponse({ ok: true });
       break;
   }

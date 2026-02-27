@@ -16,7 +16,7 @@ const themeEnabledCheckbox        = document.getElementById('theme-enabled-check
 const themeSelect                 = document.getElementById('theme-select');
 const accentSelect                = document.getElementById('accent-select');
 const themeOptionsBlock           = document.getElementById('theme-options');
-const hideUniversityHeaderCheckbox = document.getElementById('hide-university-header-checkbox');
+const hideCourseCategoryComboCheckbox = document.getElementById('hide-course-category-combo-checkbox');
 
 // ── Отправка сообщения в content-script активной вкладки ────────────────────
 async function sendToContentScript(message) {
@@ -43,14 +43,14 @@ async function loadSettings() {
     'themeEnabled',
     'theme',
     'accent',
-    'hideUniversityHeader',
+    'hideCourseCategoryCombo',
   ]);
 
   editModeCheckbox.checked             = cfg.editMode             ?? false;
   themeEnabledCheckbox.checked         = cfg.themeEnabled         ?? false;
   themeSelect.value                    = cfg.theme                ?? 'system';
   accentSelect.value                   = cfg.accent               ?? 'violet';
-  hideUniversityHeaderCheckbox.checked = cfg.hideUniversityHeader ?? false;
+  hideCourseCategoryComboCheckbox.checked = cfg.hideCourseCategoryCombo ?? false;
 
   setThemeOptionsVisible(themeEnabledCheckbox.checked);
 }
@@ -86,11 +86,11 @@ accentSelect.addEventListener('change', async () => {
   await sendToContentScript({ type: 'themeChanged', key: 'accent', value: accent });
 });
 
-// Скрытие заголовка университета
-hideUniversityHeaderCheckbox.addEventListener('change', async () => {
-  const hide = hideUniversityHeaderCheckbox.checked;
-  await adapter.set('hideUniversityHeader', hide);
-  await sendToContentScript({ type: 'hideUniversityHeaderChanged', value: hide });
+// Скрытие дерева категорий курсов
+hideCourseCategoryComboCheckbox.addEventListener('change', async () => {
+  const hide = hideCourseCategoryComboCheckbox.checked;
+  await adapter.set('hideCourseCategoryCombo', hide);
+  await sendToContentScript({ type: 'hideCourseCategoryComboChanged', value: hide });
 });
 
 // ── Инициализация ───────────────────────────────────────────────────────────
