@@ -305,8 +305,24 @@ function createBulkToolbar() {
     });
   });
 
+  const saveBtn = document.createElement('button');
+  saveBtn.className = 'kb-btn kb-btn--success';
+  saveBtn.textContent = '💾 Сохранить';
+  saveBtn.addEventListener('click', async () => {
+    await disableEditMode();
+  });
+
+  const cancelBtn = document.createElement('button');
+  cancelBtn.className = 'kb-btn kb-btn--muted';
+  cancelBtn.textContent = '✕ Отменить';
+  cancelBtn.addEventListener('click', async () => {
+    await cancelEditMode();
+  });
+
   toolbar.appendChild(selectAllBtn);
   toolbar.appendChild(invertBtn);
+  toolbar.appendChild(saveBtn);
+  toolbar.appendChild(cancelBtn);
   courseList.insertAdjacentElement('beforebegin', toolbar);
 }
 
@@ -348,14 +364,33 @@ async function disableEditMode() {
   document.body.classList.remove('kb-edit-mode');
   removeEditPanels();
 
-  // Сохранить в storage
+  // Сохранить данные и сбросить флаг режима
   await adapter.saveAll({
+    editMode:     false,
     hiddenItems:  _editState.hiddenItems,
     customTitles: _editState.customTitles,
     itemColors:   _editState.itemColors,
   });
 
   // Применить сохранённое состояние
+  processAllCourseBoxes(_editState.hiddenItems, _editState.customTitles, _editState.itemColors);
+}
+
+// ── Выключить режим редактирования — ОТМЕНИТЬ изменения ─────────────────────
+async function cancelEditMode() {
+  _editMode = false;
+  document.body.classList.remove('kb-edit-mode');
+  removeEditPanels();
+
+  // Сбросить флаг режима без сохранения данных
+  await adapter.set('editMode', false);
+
+  // Перезагрузить сохранённое состояние из storage
+  const cfg = await adapter.getMultiple(['hiddenItems', 'customTitles', 'itemColors']);
+  _editState.hiddenItems  = cfg.hiddenItems  || {};
+  _editState.customTitles = cfg.customTitles || {};
+  _editState.itemColors   = cfg.itemColors   || {};
+
   processAllCourseBoxes(_editState.hiddenItems, _editState.customTitles, _editState.itemColors);
 }
 
@@ -391,14 +426,18 @@ async function initCompactSettings() {
 // ── Слушатель сообщений от popup ─────────────────────────────────────────────
 extAPI.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   switch (message.type) {
-    case 'editModeChanged':
-      if (isMainPage) {
-        if (message.editMode) {
-          enableEditMode();
-        } else {
-          disableEditMode();
-        }
-      }
+    case 'editModeEnable':
+      if (isMainPage) enableEditMode();
+      sendResponse && sendResponse({ ok: true });
+      break;
+
+    case 'editModeSave':
+      if (isMainPage) disableEditMode();
+      sendResponse && sendResponse({ ok: true });
+      break;
+
+    case 'editModeCancel':
+      if (isMainPage) cancelEditMode();
       sendResponse && sendResponse({ ok: true });
       break;
 

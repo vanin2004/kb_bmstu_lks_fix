@@ -22,11 +22,14 @@
 
         <!-- Режим редактирования -->
         <div class="popup-section">
-            <label class="toggle-label" title="Включает элементы управления на карточках предметов">
-                <input type="checkbox" id="edit-mode-checkbox">
-                <span class="toggle-track"><span class="toggle-thumb"></span></span>
-                <span class="label-text">Режим редактирования</span>
-            </label>
+            <div class="section-title">Режим редактирования</div>
+            <div id="edit-mode-controls">
+                <button id="edit-mode-enable-btn" class="popup-btn popup-btn--primary">✏️ Включить</button>
+                <div id="edit-mode-active-btns" class="popup-btn-group" style="display: none;">
+                    <button id="edit-mode-save-btn" class="popup-btn popup-btn--success">💾 Сохранить</button>
+                    <button id="edit-mode-cancel-btn" class="popup-btn popup-btn--muted">✕ Отменить</button>
+                </div>
+            </div>
         </div>
 
         <hr class="divider">

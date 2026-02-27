@@ -70,6 +70,48 @@ body {
   margin: 10px 0;
 }
 
+/* ── Edit-mode buttons ────────────────────────────────────────────────────── */
+.popup-btn-group {
+  display: flex;
+  gap: 6px;
+}
+
+.popup-btn {
+  flex: 1;
+  padding: 7px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  font-weight: 600;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  line-height: 1.4;
+  transition: background 0.15s, box-shadow 0.15s;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+  width: 100%;
+}
+
+.popup-btn--primary {
+  background: #5c6bc0;
+  color: #fff;
+}
+.popup-btn--primary:hover  { background: #3f50b5; }
+.popup-btn--primary:active { background: #303f9f; }
+
+.popup-btn--success {
+  background: #43a047;
+  color: #fff;
+}
+.popup-btn--success:hover  { background: #2e7d32; }
+.popup-btn--success:active { background: #1b5e20; }
+
+.popup-btn--muted {
+  background: #e0e0e0;
+  color: #444;
+}
+.popup-btn--muted:hover  { background: #ffcdd2; color: #c62828; }
+.popup-btn--muted:active { background: #ef9a9a; color: #b71c1c; }
+
 /* ── Toggle switch ─────────────────────────────────────────────────────────── */
 .toggle-label {
   display: flex;

@@ -11,7 +11,10 @@ const extAPI = (typeof browser !== 'undefined') ? browser : chrome;
 const adapter = window.storageAdapter;
 
 // ── Ссылки на элементы DOM ──────────────────────────────────────────────────
-const editModeCheckbox            = document.getElementById('edit-mode-checkbox');
+const editModeEnableBtn   = document.getElementById('edit-mode-enable-btn');
+const editModeActiveBtns  = document.getElementById('edit-mode-active-btns');
+const editModeSaveBtn     = document.getElementById('edit-mode-save-btn');
+const editModeCancelBtn   = document.getElementById('edit-mode-cancel-btn');
 const themeEnabledCheckbox        = document.getElementById('theme-enabled-checkbox');
 const themeSelect                 = document.getElementById('theme-select');
 const accentSelect                = document.getElementById('accent-select');
@@ -36,6 +39,12 @@ function setThemeOptionsVisible(visible) {
   themeOptionsBlock.style.display = visible ? '' : 'none';
 }
 
+// ── Переключить вид кнопок режима редактирования ────────────────────────────
+function setEditModeButtons(active) {
+  editModeEnableBtn.style.display  = active ? 'none' : '';
+  editModeActiveBtns.style.display = active ? ''     : 'none';
+}
+
 // ── Загрузка настроек из хранилища ─────────────────────────────────────────
 async function loadSettings() {
   const cfg = await adapter.getMultiple([
@@ -46,7 +55,7 @@ async function loadSettings() {
     'hideCourseCategoryCombo',
   ]);
 
-  editModeCheckbox.checked             = cfg.editMode             ?? false;
+  setEditModeButtons(cfg.editMode ?? false);
   themeEnabledCheckbox.checked         = cfg.themeEnabled         ?? false;
   themeSelect.value                    = cfg.theme                ?? 'system';
   accentSelect.value                   = cfg.accent               ?? 'violet';
@@ -57,11 +66,23 @@ async function loadSettings() {
 
 // ── Обработчики событий ─────────────────────────────────────────────────────
 
-// Режим редактирования
-editModeCheckbox.addEventListener('change', async () => {
-  const editMode = editModeCheckbox.checked;
-  await adapter.set('editMode', editMode);
-  await sendToContentScript({ type: 'editModeChanged', editMode });
+// Режим редактирования — Включить
+editModeEnableBtn.addEventListener('click', async () => {
+  await adapter.set('editMode', true);
+  setEditModeButtons(true);
+  await sendToContentScript({ type: 'editModeEnable' });
+});
+
+// Режим редактирования — Сохранить
+editModeSaveBtn.addEventListener('click', async () => {
+  setEditModeButtons(false);
+  await sendToContentScript({ type: 'editModeSave' });
+});
+
+// Режим редактирования — Отменить
+editModeCancelBtn.addEventListener('click', async () => {
+  setEditModeButtons(false);
+  await sendToContentScript({ type: 'editModeCancel' });
 });
 
 // Включение/отключение темы

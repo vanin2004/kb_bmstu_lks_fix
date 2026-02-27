@@ -72,6 +72,20 @@ body.kb-edit-mode .coursebox.kb-hidden-item::after {
   background: #303f9f;
 }
 
+.kb-btn--success {
+  background: #43a047;
+}
+.kb-btn--success:hover  { background: #2e7d32; box-shadow: 0 2px 6px rgba(0,0,0,0.22); }
+.kb-btn--success:active { background: #1b5e20; }
+
+.kb-btn--muted {
+  background: #e0e0e0;
+  color: #444;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.10);
+}
+.kb-btn--muted:hover  { background: #ffcdd2; color: #c62828; }
+.kb-btn--muted:active { background: #ef9a9a; color: #b71c1c; }
+
 /* ── Панель редактирования карточки ──────────────────────────────────────── */
 .kb-edit-panel {
   display: flex;
