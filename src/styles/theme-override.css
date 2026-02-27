@@ -120,6 +120,14 @@ html.kb-theme-loading * {
     transition: none !important;
 }
 
+/* Content FOUC prevention — скрыть изменяемые части страницы до применения content-script */
+html.kb-content-loading #frontpage-course-list {
+    visibility: hidden;
+}
+html.kb-content-loading #page-header .page-header-headings h1 {
+    visibility: hidden;
+}
+
 /* ══════════════════════════════════════════════════════════════════════════
    Все правила ниже активны только при включённой теме.
    html[data-theme] устанавливается скриптом theme-early.js.

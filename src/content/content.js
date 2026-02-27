@@ -109,6 +109,14 @@ async function applyCustomTitleToHeading() {
 
   const customTitles = (await adapter.get('customTitles')) || {};
   const customTitle  = customTitles[courseId] || null;
+
+  // Обновить кеш content FOUC до early return, чтобы правильно отражать текущее состояние
+  try {
+    const existing = JSON.parse(sessionStorage.getItem('kb_content_cfg') || '{}');
+    existing.hideCourse = !!customTitle;
+    sessionStorage.setItem('kb_content_cfg', JSON.stringify(existing));
+  } catch (_) {}
+
   if (!customTitle) return;
 
   const h1 = document.querySelector('#page-header .page-header-headings h1');
@@ -588,6 +596,18 @@ async function initMainPage() {
 
   processAllCourseBoxes(_editState.hiddenItems, _editState.customTitles, _editState.itemColors, _editState.hiddenImages);
   extractAndSaveTeachers();
+
+  // Обновить кеш content FOUC: прятать список при следующей загрузке, если есть изменения
+  const _hasMainChanges = _features.sortAlpha ||
+    Object.values(_editState.hiddenItems).some(Boolean) ||
+    Object.values(_editState.customTitles).some(Boolean) ||
+    Object.keys(_editState.itemColors).length > 0 ||
+    Object.values(_editState.hiddenImages).some(Boolean);
+  try {
+    const existing = JSON.parse(sessionStorage.getItem('kb_content_cfg') || '{}');
+    existing.hideMain = _hasMainChanges;
+    sessionStorage.setItem('kb_content_cfg', JSON.stringify(existing));
+  } catch (_) {}
 }
 
 // ── Обработчик компактного вида ───────────────────────────────────────────────
@@ -667,4 +687,7 @@ extAPI.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     await applyCustomTitleToHeading();
     await injectCourseInfoBlock();
   }
+
+  // Снять класс скрытия контента (гарантированно, включая страховой вариант)
+  document.documentElement.classList.remove('kb-content-loading');
 })();

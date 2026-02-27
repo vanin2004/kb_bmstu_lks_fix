@@ -49,4 +49,21 @@
     try { sessionStorage.setItem(CACHE_KEY, JSON.stringify(cfg)); } catch (_) {}
     applyThemeCfg(cfg, true);
   });
+
+  // ── Content FOUC prevention ──────────────────────────────────────────────
+  // Если кеш говорит, что на этой странице будут применяться изменения —
+  // скрываем изменяемые элементы до завершения content.js
+  try {
+    const contentCfg = JSON.parse(sessionStorage.getItem('kb_content_cfg') || 'null');
+    if (contentCfg) {
+      const path = location.pathname;
+      const isMain = /\/kaluga\/?$/.test(path) || path.endsWith('/kaluga/index.php');
+      const isCourseOrMod = path.includes('/course/view.php') || path.includes('/mod/');
+      if ((isMain && contentCfg.hideMain) || (isCourseOrMod && contentCfg.hideCourse)) {
+        document.documentElement.classList.add('kb-content-loading');
+        // Страховой таймаут: снять класс если content.js не сработал в течение 3с
+        setTimeout(() => document.documentElement.classList.remove('kb-content-loading'), 3000);
+      }
+    }
+  } catch (_) {}
 })();
