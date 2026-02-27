@@ -28,6 +28,7 @@ let _editState = {
   hiddenItems:    {},   // { id: bool }
   customTitles:   {},   // { id: string|null }
   itemColors:     {},   // { id: '#rrggbb' }
+  hiddenImages:   {},   // { id: bool }
 };
 
 let _editMode = false;
@@ -215,6 +216,13 @@ function applyVisibility(box, courseId, hiddenItems) {
   }
 }
 
+// Скрыть/показать картинку карточки
+function applyImageVisibility(box, courseId, hiddenImages) {
+  const img = box.querySelector('.courseimage');
+  if (!img) return;
+  img.style.display = hiddenImages[courseId] ? 'none' : '';
+}
+
 // Создать панель редактирования для одной карточки
 function createEditPanel(box, courseId) {
   if (box.querySelector('.kb-edit-panel')) return;
@@ -336,6 +344,23 @@ function createEditPanel(box, courseId) {
   panel.appendChild(origNameEl);
   panel.appendChild(titleRow);
   panel.appendChild(colorWrapper);
+
+  // --- Кнопка скрытия картинки (только если она есть)
+  const courseImage = box.querySelector('.courseimage img');
+  if (courseImage) {
+    const hideImgBtn = document.createElement('button');
+    hideImgBtn.type = 'button';
+    hideImgBtn.className = 'kb-hide-image-btn';
+    hideImgBtn.textContent = _editState.hiddenImages[courseId] ? '🖼️ Показать картинку' : '🚫 Скрыть картинку';
+    hideImgBtn.addEventListener('click', () => {
+      const nowHidden = !_editState.hiddenImages[courseId];
+      _editState.hiddenImages[courseId] = nowHidden || undefined;
+      if (!nowHidden) delete _editState.hiddenImages[courseId];
+      applyImageVisibility(box, courseId, _editState.hiddenImages);
+      hideImgBtn.textContent = _editState.hiddenImages[courseId] ? '🖼️ Показать картинку' : '🚫 Скрыть картинку';
+    });
+    panel.appendChild(hideImgBtn);
+  }
 
   box.appendChild(panel);
 }
@@ -461,7 +486,7 @@ function sortCourseBoxes(customTitles) {
 }
 
 // Обработать все карточки на главной странице
-function processAllCourseBoxes(hiddenItems, customTitles, itemColors) {
+function processAllCourseBoxes(hiddenItems, customTitles, itemColors, hiddenImages) {
   const boxes = document.querySelectorAll('.coursebox[data-courseid]');
   boxes.forEach(box => {
     const id = box.dataset.courseid;
@@ -470,6 +495,7 @@ function processAllCourseBoxes(hiddenItems, customTitles, itemColors) {
     applyTitle(box, id, customTitles);
     applyColorStrip(box, itemColors[id] || null);
     applyVisibility(box, id, hiddenItems);
+    applyImageVisibility(box, id, hiddenImages || {});
 
     if (_editMode) {
       createEditPanel(box, id);
@@ -498,15 +524,16 @@ function extractAndSaveTeachers() {
 // ── Включить режим редактирования ────────────────────────────────────────────
 async function enableEditMode() {
   // Загрузить текущие данные в рабочую копию
-  const cfg = await adapter.getMultiple(['hiddenItems', 'customTitles', 'itemColors']);
+  const cfg = await adapter.getMultiple(['hiddenItems', 'customTitles', 'itemColors', 'hiddenImages']);
   _editState.hiddenItems  = Object.assign({}, cfg.hiddenItems  || {});
   _editState.customTitles = Object.assign({}, cfg.customTitles || {});
   _editState.itemColors   = Object.assign({}, cfg.itemColors   || {});
+  _editState.hiddenImages = Object.assign({}, cfg.hiddenImages || {});
 
   _editMode = true;
   document.body.classList.add('kb-edit-mode');
 
-  processAllCourseBoxes(_editState.hiddenItems, _editState.customTitles, _editState.itemColors);
+  processAllCourseBoxes(_editState.hiddenItems, _editState.customTitles, _editState.itemColors, _editState.hiddenImages);
   createBulkToolbar();
 }
 
@@ -522,10 +549,11 @@ async function disableEditMode() {
     hiddenItems:  _editState.hiddenItems,
     customTitles: _editState.customTitles,
     itemColors:   _editState.itemColors,
+    hiddenImages: _editState.hiddenImages,
   });
 
   // Применить сохранённое состояние
-  processAllCourseBoxes(_editState.hiddenItems, _editState.customTitles, _editState.itemColors);
+  processAllCourseBoxes(_editState.hiddenItems, _editState.customTitles, _editState.itemColors, _editState.hiddenImages);
 }
 
 // ── Выключить режим редактирования — ОТМЕНИТЬ изменения ─────────────────────
@@ -538,24 +566,26 @@ async function cancelEditMode() {
   await adapter.set('editMode', false);
 
   // Перезагрузить сохранённое состояние из storage
-  const cfg = await adapter.getMultiple(['hiddenItems', 'customTitles', 'itemColors']);
+  const cfg = await adapter.getMultiple(['hiddenItems', 'customTitles', 'itemColors', 'hiddenImages']);
   _editState.hiddenItems  = cfg.hiddenItems  || {};
   _editState.customTitles = cfg.customTitles || {};
   _editState.itemColors   = cfg.itemColors   || {};
+  _editState.hiddenImages = cfg.hiddenImages || {};
 
-  processAllCourseBoxes(_editState.hiddenItems, _editState.customTitles, _editState.itemColors);
+  processAllCourseBoxes(_editState.hiddenItems, _editState.customTitles, _editState.itemColors, _editState.hiddenImages);
 }
 
 // ── Инициализация главной страницы ───────────────────────────────────────────
 async function initMainPage() {
   const cfg = await adapter.getMultiple([
-    'editMode', 'hiddenItems', 'customTitles', 'itemColors',
+    'editMode', 'hiddenItems', 'customTitles', 'itemColors', 'hiddenImages',
     'featureSortAlpha', 'featureSwapOddEven',
   ]);
 
   _editState.hiddenItems  = cfg.hiddenItems  || {};
   _editState.customTitles = cfg.customTitles || {};
   _editState.itemColors   = cfg.itemColors   || {};
+  _editState.hiddenImages = cfg.hiddenImages || {};
   _editMode               = cfg.editMode     ?? false;
 
   _features.sortAlpha   = cfg.featureSortAlpha   ?? true;
@@ -566,7 +596,7 @@ async function initMainPage() {
     createBulkToolbar();
   }
 
-  processAllCourseBoxes(_editState.hiddenItems, _editState.customTitles, _editState.itemColors);
+  processAllCourseBoxes(_editState.hiddenItems, _editState.customTitles, _editState.itemColors, _editState.hiddenImages);
   extractAndSaveTeachers();
 }
 
