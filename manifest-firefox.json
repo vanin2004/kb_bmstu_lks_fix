@@ -38,7 +38,15 @@
       "matches": ["*://e-learning.bmstu.ru/kaluga/*"],
       "js": [
         "src/storage.js",
-        "src/content/content.js"
+        "src/content/modules/state.js",
+        "src/content/modules/utils.js",
+        "src/content/modules/theme.js",
+        "src/content/modules/compact.js",
+        "src/content/modules/course-page.js",
+        "src/content/modules/main-page.js",
+        "src/content/modules/auto-filename.js",
+        "src/content/modules/messages.js",
+        "src/content/init.js"
       ],
       "css": [
         "src/styles/content-elements.css"
