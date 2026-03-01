@@ -350,9 +350,10 @@ body {
   line-height: 1.3;
 }
 
-/* ── Theme options block ───────────────────────────────────────────────────── */
-.theme-options {
-  margin-top: 8px;
+/* ── Settings panel (unified: theme, student info, autologin) ──────────────── */
+.settings-panel {
+  margin-top: 6px;
+  margin-bottom: 6px;
   padding: 8px 10px;
   background: var(--popup-surface-2);
   border-radius: 12px;
@@ -361,6 +362,94 @@ body {
   gap: 6px;
 }
 
+/* ── Feature row (label + optional gear button) ─────────────────────────────── */
+.feature-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.feature-row .checkbox-label,
+.feature-row .toggle-label {
+  flex: 1;
+  min-width: 0;
+  margin-bottom: 0;
+}
+
+/* ── Gear button ─────────────────────────────────────────────────────────────── */
+.gear-btn {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--popup-outline-var);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--popup-on-surface-var);
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  opacity: 0.6;
+}
+
+.gear-btn:hover {
+  background: var(--popup-surface-var);
+  opacity: 1;
+}
+
+.gear-btn.active {
+  background: var(--popup-primary-cont);
+  color: var(--popup-on-primary-cont);
+  border-color: var(--popup-primary);
+  opacity: 1;
+}
+
+/* ── Settings actions (Apply / Cancel) ──────────────────────────────────────── */
+.settings-actions {
+  display: flex;
+  gap: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--popup-outline-var);
+}
+
+.settings-apply-btn,
+.settings-cancel-btn {
+  flex: 1;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-family: inherit;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  line-height: 1.4;
+}
+
+.settings-apply-btn {
+  border: none;
+  background: var(--popup-primary);
+  color: var(--popup-on-primary);
+  transition: filter 0.15s;
+}
+
+.settings-apply-btn:hover  { filter: brightness(0.9); }
+.settings-apply-btn:active { filter: brightness(0.82); }
+
+.settings-cancel-btn {
+  border: 1px solid var(--popup-outline-var);
+  background: transparent;
+  color: var(--popup-on-surface-var);
+  font-weight: 500;
+  transition: background 0.15s;
+}
+
+.settings-cancel-btn:hover { background: var(--popup-surface-var); }
+
+/* ── Select row (inside theme settings panel) ───────────────────────────────── */
 .select-row {
   display: flex;
   justify-content: space-between;
@@ -392,17 +481,7 @@ body {
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--popup-primary) 20%, transparent);
 }
 
-/* ── Student info block ────────────────────────────────────────────────────── */
-.student-info-options {
-  margin-top: 8px;
-  padding: 8px 10px;
-  background: var(--popup-surface-2);
-  border-radius: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
+/* ── Input row (inside student info / autologin panels) ─────────────────────── */
 .input-row {
   display: flex;
   justify-content: space-between;

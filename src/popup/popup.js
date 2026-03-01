@@ -10,67 +10,52 @@
 const extAPI = (typeof browser !== 'undefined') ? browser : chrome;
 const adapter = window.storageAdapter;
 
-// ── Ссылки на элементы DOM ──────────────────────────────────────────────────
-const editModeEnableBtn   = document.getElementById('edit-mode-enable-btn');
-const editModeActiveBtns  = document.getElementById('edit-mode-active-btns');
-const editModeSaveBtn     = document.getElementById('edit-mode-save-btn');
-const editModeCancelBtn   = document.getElementById('edit-mode-cancel-btn');
-const themeEnabledCheckbox        = document.getElementById('theme-enabled-checkbox');
-const themeSelect                 = document.getElementById('theme-select');
-const accentSelect                = document.getElementById('accent-select');
-const themeOptionsBlock           = document.getElementById('theme-options');
-const hideCourseCategoryComboCheckbox = document.getElementById('hide-course-category-combo-checkbox');
-const hidePagingMoreLinkCheckbox       = document.getElementById('hide-paging-morelink-checkbox');
-const hideEnrolIconCheckbox            = document.getElementById('hide-enrol-icon-checkbox');
-const hideMainPageHeaderCheckbox       = document.getElementById('hide-main-page-header-checkbox');
-const featureSortAlphaCheckbox        = document.getElementById('feature-sort-alpha-checkbox');
-const featureSwapOddEvenCheckbox      = document.getElementById('feature-swap-odd-even-checkbox');
-const featureAutoFilenameCheckbox     = document.getElementById('feature-auto-filename-checkbox');
-const studentInfoOptions              = document.getElementById('student-info-options');
-const studentLastnameInput            = document.getElementById('student-lastname-input');
-const studentFirstnameInput           = document.getElementById('student-firstname-input');
-const studentMiddlenameInput          = document.getElementById('student-middlename-input');
-const studentGroupInput               = document.getElementById('student-group-input');
-const autologinEnabledCheckbox        = document.getElementById('autologin-enabled-checkbox');
-const autologinCredentials            = document.getElementById('autologin-credentials');
-const autologinUsernameInput          = document.getElementById('autologin-username-input');
-const autologinPasswordInput          = document.getElementById('autologin-password-input');
+// ── DOM refs ────────────────────────────────────────────────────────────────
+const editModeEnableBtn  = document.getElementById('edit-mode-enable-btn');
+const editModeActiveBtns = document.getElementById('edit-mode-active-btns');
+const editModeSaveBtn    = document.getElementById('edit-mode-save-btn');
+const editModeCancelBtn  = document.getElementById('edit-mode-cancel-btn');
 
-// ── Отправка сообщения в content-script активной вкладки ────────────────────
+const themeEnabledCheckbox = document.getElementById('theme-enabled-checkbox');
+const themeSelect          = document.getElementById('theme-select');
+const accentSelect         = document.getElementById('accent-select');
+
+const hideCourseCategoryComboCheckbox = document.getElementById('hide-course-category-combo-checkbox');
+const hidePagingMoreLinkCheckbox      = document.getElementById('hide-paging-morelink-checkbox');
+const hideEnrolIconCheckbox           = document.getElementById('hide-enrol-icon-checkbox');
+const hideMainPageHeaderCheckbox      = document.getElementById('hide-main-page-header-checkbox');
+
+const featureSortAlphaCheckbox    = document.getElementById('feature-sort-alpha-checkbox');
+const featureSwapOddEvenCheckbox  = document.getElementById('feature-swap-odd-even-checkbox');
+const featureAutoFilenameCheckbox = document.getElementById('feature-auto-filename-checkbox');
+const autologinEnabledCheckbox    = document.getElementById('autologin-enabled-checkbox');
+
+const studentLastnameInput   = document.getElementById('student-lastname-input');
+const studentFirstnameInput  = document.getElementById('student-firstname-input');
+const studentMiddlenameInput = document.getElementById('student-middlename-input');
+const studentGroupInput      = document.getElementById('student-group-input');
+
+const autologinUsernameInput = document.getElementById('autologin-username-input');
+const autologinPasswordInput = document.getElementById('autologin-password-input');
+
+// ── Last-saved state per settings panel ─────────────────────────────────────
+// Populated on loadSettings; updated on Apply; used by Cancel to revert fields.
+const saved = {
+  'theme-panel':        { theme: 'system', accent: 'violet' },
+  'student-info-panel': { studentLastname: '', studentFirstname: '', studentMiddlename: '', studentGroup: '' },
+  'autologin-panel':    { autologinUsername: '', autologinPassword: '' },
+};
+
+// ── Utilities ────────────────────────────────────────────────────────────────
 async function sendToContentScript(message) {
   try {
     const tabs = await extAPI.tabs.query({ active: true, currentWindow: true });
-    if (tabs && tabs[0]) {
-      await extAPI.tabs.sendMessage(tabs[0].id, message);
-    }
+    if (tabs && tabs[0]) await extAPI.tabs.sendMessage(tabs[0].id, message);
   } catch (e) {
-    // Страница может не совпадать с matches → content script не загружен
     console.warn('[kb_bmstu_lks_fix] sendMessage:', e.message || e);
   }
 }
 
-// ── Показать/скрыть блок настроек темы ─────────────────────────────────────
-function setThemeOptionsVisible(visible) {
-  themeOptionsBlock.style.display = visible ? '' : 'none';
-}
-
-// ── Показать/скрыть блок данных студента ─────────────────────────────
-function setStudentInfoVisible(visible) {
-  studentInfoOptions.style.display = visible ? '' : 'none';
-}
-
-// ── Показать/скрыть поля логина/пароля автовхода ────────────────────────────
-function setAutologinCredentialsVisible(visible) {
-  autologinCredentials.style.display = visible ? '' : 'none';
-}
-
-// ── Переключить вид кнопок режима редактирования ────────────────────────────
-function setEditModeButtons(active) {
-  editModeEnableBtn.style.display  = active ? 'none' : '';
-  editModeActiveBtns.style.display = active ? ''     : 'none';
-}
-
-// ── Применить тему к самому попапу (data-theme / data-accent на <html>) ──────
 function applyPopupTheme(themeEnabled, theme, accent) {
   const html = document.documentElement;
   if (themeEnabled) {
@@ -82,51 +67,245 @@ function applyPopupTheme(themeEnabled, theme, accent) {
   }
 }
 
-// ── Загрузка настроек из хранилища ─────────────────────────────────────────
+function setEditModeButtons(active) {
+  editModeEnableBtn.style.display  = active ? 'none' : '';
+  editModeActiveBtns.style.display = active ? ''     : 'none';
+}
+
+// ── Panel open / close ───────────────────────────────────────────────────────
+function isPanelOpen(panelId) {
+  const panel = document.getElementById(panelId);
+  return !!panel && panel.style.display !== 'none';
+}
+
+function setPanelOpen(panelId, open) {
+  const panel = document.getElementById(panelId);
+  if (!panel) return;
+  panel.style.display = open ? '' : 'none';
+  const gear = document.querySelector(`.gear-btn[data-panel="${panelId}"]`);
+  if (gear) gear.classList.toggle('active', open);
+}
+
+// ── Apply: save panel fields to storage then close ───────────────────────────
+const applyHandlers = {
+  'theme-panel': async () => {
+    const theme  = themeSelect.value;
+    const accent = accentSelect.value;
+    await adapter.saveAll({ theme, accent });
+    saved['theme-panel'] = { theme, accent };
+    applyPopupTheme(themeEnabledCheckbox.checked, theme, accent);
+    await sendToContentScript({ type: 'themeChanged', key: 'theme',  value: theme });
+    await sendToContentScript({ type: 'themeChanged', key: 'accent', value: accent });
+    setPanelOpen('theme-panel', false);
+  },
+
+  'student-info-panel': async () => {
+    const data = {
+      studentLastname:   studentLastnameInput.value,
+      studentFirstname:  studentFirstnameInput.value,
+      studentMiddlename: studentMiddlenameInput.value,
+      studentGroup:      studentGroupInput.value,
+    };
+    await adapter.saveAll(data);
+    saved['student-info-panel'] = { ...data };
+    for (const [key, value] of Object.entries(data)) {
+      await sendToContentScript({ type: 'studentInfoChanged', key, value });
+    }
+    setPanelOpen('student-info-panel', false);
+  },
+
+  'autologin-panel': async () => {
+    const data = {
+      autologinUsername: autologinUsernameInput.value,
+      autologinPassword: autologinPasswordInput.value,
+    };
+    await adapter.saveAll(data);
+    saved['autologin-panel'] = { ...data };
+    setPanelOpen('autologin-panel', false);
+  },
+};
+
+// ── Cancel: revert fields to last saved state then close ─────────────────────
+const cancelHandlers = {
+  'theme-panel': () => {
+    const { theme, accent } = saved['theme-panel'];
+    themeSelect.value  = theme;
+    accentSelect.value = accent;
+    applyPopupTheme(themeEnabledCheckbox.checked, theme, accent);
+    setPanelOpen('theme-panel', false);
+  },
+
+  'student-info-panel': () => {
+    const s = saved['student-info-panel'];
+    studentLastnameInput.value   = s.studentLastname;
+    studentFirstnameInput.value  = s.studentFirstname;
+    studentMiddlenameInput.value = s.studentMiddlename;
+    studentGroupInput.value      = s.studentGroup;
+    setPanelOpen('student-info-panel', false);
+  },
+
+  'autologin-panel': () => {
+    autologinUsernameInput.value = saved['autologin-panel'].autologinUsername;
+    autologinPasswordInput.value = saved['autologin-panel'].autologinPassword;
+    setPanelOpen('autologin-panel', false);
+  },
+};
+
+// ── Gear buttons ─────────────────────────────────────────────────────────────
+document.querySelectorAll('.gear-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const panelId = btn.dataset.panel;
+    setPanelOpen(panelId, !isPanelOpen(panelId));
+  });
+});
+
+// ── Apply / Cancel buttons ───────────────────────────────────────────────────
+document.querySelectorAll('.settings-apply-btn').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    const handler = applyHandlers[btn.dataset.panel];
+    if (handler) await handler();
+  });
+});
+
+document.querySelectorAll('.settings-cancel-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const handler = cancelHandlers[btn.dataset.panel];
+    if (handler) handler();
+  });
+});
+
+// ── Edit mode ────────────────────────────────────────────────────────────────
+editModeEnableBtn.addEventListener('click', async () => {
+  await adapter.set('editMode', true);
+  setEditModeButtons(true);
+  await sendToContentScript({ type: 'editModeEnable' });
+});
+
+editModeSaveBtn.addEventListener('click', async () => {
+  setEditModeButtons(false);
+  await sendToContentScript({ type: 'editModeSave' });
+});
+
+editModeCancelBtn.addEventListener('click', async () => {
+  setEditModeButtons(false);
+  await sendToContentScript({ type: 'editModeCancel' });
+});
+
+// ── Theme toggle ─────────────────────────────────────────────────────────────
+themeEnabledCheckbox.addEventListener('change', async () => {
+  const enabled = themeEnabledCheckbox.checked;
+  await adapter.set('themeEnabled', enabled);
+  applyPopupTheme(enabled, themeSelect.value, accentSelect.value);
+  await sendToContentScript({ type: 'themeChanged', key: 'themeEnabled', value: enabled });
+  if (enabled && !isPanelOpen('theme-panel')) setPanelOpen('theme-panel', true);
+});
+
+// Theme selects: live-preview only (data saved on Apply)
+themeSelect.addEventListener('change', () => {
+  applyPopupTheme(themeEnabledCheckbox.checked, themeSelect.value, accentSelect.value);
+});
+
+accentSelect.addEventListener('change', () => {
+  applyPopupTheme(themeEnabledCheckbox.checked, themeSelect.value, accentSelect.value);
+});
+
+// ── Compact view ─────────────────────────────────────────────────────────────
+hideCourseCategoryComboCheckbox.addEventListener('change', async () => {
+  const hide = hideCourseCategoryComboCheckbox.checked;
+  await adapter.set('hideCourseCategoryCombo', hide);
+  await sendToContentScript({ type: 'hideCourseCategoryComboChanged', value: hide });
+});
+
+hidePagingMoreLinkCheckbox.addEventListener('change', async () => {
+  const hide = hidePagingMoreLinkCheckbox.checked;
+  await adapter.set('hidePagingMoreLink', hide);
+  await sendToContentScript({ type: 'hidePagingMoreLinkChanged', value: hide });
+});
+
+hideEnrolIconCheckbox.addEventListener('change', async () => {
+  const hide = hideEnrolIconCheckbox.checked;
+  await adapter.set('hideEnrolIcon', hide);
+  await sendToContentScript({ type: 'hideEnrolIconChanged', value: hide });
+});
+
+hideMainPageHeaderCheckbox.addEventListener('change', async () => {
+  const hide = hideMainPageHeaderCheckbox.checked;
+  await adapter.set('hideMainPageHeader', hide);
+  await sendToContentScript({ type: 'hideMainPageHeaderChanged', value: hide });
+});
+
+// ── Features ─────────────────────────────────────────────────────────────────
+featureSortAlphaCheckbox.addEventListener('change', async () => {
+  const value = featureSortAlphaCheckbox.checked;
+  await adapter.set('featureSortAlpha', value);
+  await sendToContentScript({ type: 'featuresChanged', features: { sortAlpha: value } });
+});
+
+featureSwapOddEvenCheckbox.addEventListener('change', async () => {
+  const value = featureSwapOddEvenCheckbox.checked;
+  await adapter.set('featureSwapOddEven', value);
+  await sendToContentScript({ type: 'featuresChanged', features: { swapOddEven: value } });
+});
+
+featureAutoFilenameCheckbox.addEventListener('change', async () => {
+  const value = featureAutoFilenameCheckbox.checked;
+  await adapter.set('featureAutoFilename', value);
+  await sendToContentScript({ type: 'featureAutoFilenameChanged', value });
+  if (value && !isPanelOpen('student-info-panel')) setPanelOpen('student-info-panel', true);
+});
+
+autologinEnabledCheckbox.addEventListener('change', async () => {
+  const value = autologinEnabledCheckbox.checked;
+  await adapter.set('autologinEnabled', value);
+  if (value && !isPanelOpen('autologin-panel')) setPanelOpen('autologin-panel', true);
+});
+
+// ── Load settings ─────────────────────────────────────────────────────────────
 async function loadSettings() {
   const cfg = await adapter.getMultiple([
     'editMode',
-    'themeEnabled',
-    'theme',
-    'accent',
-    'hideCourseCategoryCombo',
-    'hidePagingMoreLink',
-    'hideEnrolIcon',
-    'hideMainPageHeader',
-    'featureSortAlpha',
-    'featureSwapOddEven',
-    'featureAutoFilename',
-    'studentLastname',
-    'studentFirstname',
-    'studentMiddlename',
-    'studentGroup',
-    'autologinEnabled',
-    'autologinUsername',
-    'autologinPassword',
+    'themeEnabled', 'theme', 'accent',
+    'hideCourseCategoryCombo', 'hidePagingMoreLink', 'hideEnrolIcon', 'hideMainPageHeader',
+    'featureSortAlpha', 'featureSwapOddEven', 'featureAutoFilename',
+    'studentLastname', 'studentFirstname', 'studentMiddlename', 'studentGroup',
+    'autologinEnabled', 'autologinUsername', 'autologinPassword',
   ]);
 
   setEditModeButtons(cfg.editMode ?? false);
-  themeEnabledCheckbox.checked            = cfg.themeEnabled            ?? false;
-  themeSelect.value                       = cfg.theme                   ?? 'system';
-  accentSelect.value                      = cfg.accent                  ?? 'violet';
-  hideCourseCategoryComboCheckbox.checked = cfg.hideCourseCategoryCombo ?? false;
-  hidePagingMoreLinkCheckbox.checked       = cfg.hidePagingMoreLink       ?? false;
-  hideEnrolIconCheckbox.checked            = cfg.hideEnrolIcon            ?? false;
-  hideMainPageHeaderCheckbox.checked       = cfg.hideMainPageHeader       ?? false;
-  featureSortAlphaCheckbox.checked        = cfg.featureSortAlpha        ?? true;
-  featureSwapOddEvenCheckbox.checked      = cfg.featureSwapOddEven      ?? true;
-  featureAutoFilenameCheckbox.checked     = cfg.featureAutoFilename     ?? false;
-  studentLastnameInput.value              = cfg.studentLastname          ?? '';
-  studentFirstnameInput.value             = cfg.studentFirstname         ?? '';
-  studentMiddlenameInput.value            = cfg.studentMiddlename        ?? '';
-  studentGroupInput.value                 = cfg.studentGroup             ?? '';
-  autologinEnabledCheckbox.checked        = cfg.autologinEnabled          ?? false;
-  autologinUsernameInput.value            = cfg.autologinUsername         ?? '';
-  autologinPasswordInput.value            = cfg.autologinPassword         ?? '';
 
-  setThemeOptionsVisible(themeEnabledCheckbox.checked);
-  setStudentInfoVisible(featureAutoFilenameCheckbox.checked);
-  setAutologinCredentialsVisible(autologinEnabledCheckbox.checked);
+  themeEnabledCheckbox.checked = cfg.themeEnabled ?? false;
+  themeSelect.value            = cfg.theme        ?? 'system';
+  accentSelect.value           = cfg.accent       ?? 'violet';
+  saved['theme-panel'] = { theme: themeSelect.value, accent: accentSelect.value };
+
+  hideCourseCategoryComboCheckbox.checked = cfg.hideCourseCategoryCombo ?? false;
+  hidePagingMoreLinkCheckbox.checked      = cfg.hidePagingMoreLink      ?? false;
+  hideEnrolIconCheckbox.checked           = cfg.hideEnrolIcon           ?? false;
+  hideMainPageHeaderCheckbox.checked      = cfg.hideMainPageHeader      ?? false;
+
+  featureSortAlphaCheckbox.checked    = cfg.featureSortAlpha    ?? true;
+  featureSwapOddEvenCheckbox.checked  = cfg.featureSwapOddEven  ?? true;
+  featureAutoFilenameCheckbox.checked = cfg.featureAutoFilename ?? false;
+
+  studentLastnameInput.value   = cfg.studentLastname   ?? '';
+  studentFirstnameInput.value  = cfg.studentFirstname  ?? '';
+  studentMiddlenameInput.value = cfg.studentMiddlename ?? '';
+  studentGroupInput.value      = cfg.studentGroup      ?? '';
+  saved['student-info-panel'] = {
+    studentLastname:   studentLastnameInput.value,
+    studentFirstname:  studentFirstnameInput.value,
+    studentMiddlename: studentMiddlenameInput.value,
+    studentGroup:      studentGroupInput.value,
+  };
+
+  autologinEnabledCheckbox.checked = cfg.autologinEnabled ?? false;
+  autologinUsernameInput.value     = cfg.autologinUsername ?? '';
+  autologinPasswordInput.value     = cfg.autologinPassword ?? '';
+  saved['autologin-panel'] = {
+    autologinUsername: autologinUsernameInput.value,
+    autologinPassword: autologinPasswordInput.value,
+  };
+
   applyPopupTheme(
     cfg.themeEnabled ?? false,
     cfg.theme        ?? 'system',
@@ -134,131 +313,4 @@ async function loadSettings() {
   );
 }
 
-// ── Обработчики событий ─────────────────────────────────────────────────────
-
-// Режим редактирования — Включить
-editModeEnableBtn.addEventListener('click', async () => {
-  await adapter.set('editMode', true);
-  setEditModeButtons(true);
-  await sendToContentScript({ type: 'editModeEnable' });
-});
-
-// Режим редактирования — Сохранить
-editModeSaveBtn.addEventListener('click', async () => {
-  setEditModeButtons(false);
-  await sendToContentScript({ type: 'editModeSave' });
-});
-
-// Режим редактирования — Отменить
-editModeCancelBtn.addEventListener('click', async () => {
-  setEditModeButtons(false);
-  await sendToContentScript({ type: 'editModeCancel' });
-});
-
-// Включение/отключение темы
-themeEnabledCheckbox.addEventListener('change', async () => {
-  const enabled = themeEnabledCheckbox.checked;
-  await adapter.set('themeEnabled', enabled);
-  setThemeOptionsVisible(enabled);
-  applyPopupTheme(enabled, themeSelect.value, accentSelect.value);
-  await sendToContentScript({ type: 'themeChanged', key: 'themeEnabled', value: enabled });
-});
-
-// Выбор цветовой схемы
-themeSelect.addEventListener('change', async () => {
-  const theme = themeSelect.value;
-  await adapter.set('theme', theme);
-  applyPopupTheme(themeEnabledCheckbox.checked, theme, accentSelect.value);
-  await sendToContentScript({ type: 'themeChanged', key: 'theme', value: theme });
-});
-
-// Выбор акцентного цвета
-accentSelect.addEventListener('change', async () => {
-  const accent = accentSelect.value;
-  await adapter.set('accent', accent);
-  applyPopupTheme(themeEnabledCheckbox.checked, themeSelect.value, accent);
-  await sendToContentScript({ type: 'themeChanged', key: 'accent', value: accent });
-});
-
-// Скрытие дерева категорий курсов
-hideCourseCategoryComboCheckbox.addEventListener('change', async () => {
-  const hide = hideCourseCategoryComboCheckbox.checked;
-  await adapter.set('hideCourseCategoryCombo', hide);
-  await sendToContentScript({ type: 'hideCourseCategoryComboChanged', value: hide });
-});
-
-// Скрытие ссылки «Все курсы»
-hidePagingMoreLinkCheckbox.addEventListener('change', async () => {
-  const hide = hidePagingMoreLinkCheckbox.checked;
-  await adapter.set('hidePagingMoreLink', hide);
-  await sendToContentScript({ type: 'hidePagingMoreLinkChanged', value: hide });
-});
-
-// Скрытие иконки записи в группу МГТУ
-hideEnrolIconCheckbox.addEventListener('change', async () => {
-  const hide = hideEnrolIconCheckbox.checked;
-  await adapter.set('hideEnrolIcon', hide);
-  await sendToContentScript({ type: 'hideEnrolIconChanged', value: hide });
-});
-
-// Скрытие шапки на главной странице
-hideMainPageHeaderCheckbox.addEventListener('change', async () => {
-  const hide = hideMainPageHeaderCheckbox.checked;
-  await adapter.set('hideMainPageHeader', hide);
-  await sendToContentScript({ type: 'hideMainPageHeaderChanged', value: hide });
-});
-
-// Фича: сортировка по алфавиту
-featureSortAlphaCheckbox.addEventListener('change', async () => {
-  const value = featureSortAlphaCheckbox.checked;
-  await adapter.set('featureSortAlpha', value);
-  await sendToContentScript({ type: 'featuresChanged', features: { sortAlpha: value } });
-});
-
-// Фича: поменять odd/even местами
-featureSwapOddEvenCheckbox.addEventListener('change', async () => {
-  const value = featureSwapOddEvenCheckbox.checked;
-  await adapter.set('featureSwapOddEven', value);
-  await sendToContentScript({ type: 'featuresChanged', features: { swapOddEven: value } });
-});
-
-// Фича: автозаполнение имени файла
-featureAutoFilenameCheckbox.addEventListener('change', async () => {
-  const value = featureAutoFilenameCheckbox.checked;
-  await adapter.set('featureAutoFilename', value);
-  setStudentInfoVisible(value);
-  await sendToContentScript({ type: 'featureAutoFilenameChanged', value });
-});
-
-// Данные студента — сохраняем при потере фокуса / нажатии Enter
-[
-  ['studentLastname',   studentLastnameInput],
-  ['studentFirstname',  studentFirstnameInput],
-  ['studentMiddlename', studentMiddlenameInput],
-  ['studentGroup',      studentGroupInput],
-].forEach(([key, input]) => {
-  input.addEventListener('change', async () => {
-    await adapter.set(key, input.value);
-    await sendToContentScript({ type: 'studentInfoChanged', key, value: input.value });
-  });
-});
-
-// Автовход — включение/отключение
-autologinEnabledCheckbox.addEventListener('change', async () => {
-  const value = autologinEnabledCheckbox.checked;
-  await adapter.set('autologinEnabled', value);
-  setAutologinCredentialsVisible(value);
-});
-
-// Автовход — логин и пароль сохраняются при изменении
-[
-  ['autologinUsername', autologinUsernameInput],
-  ['autologinPassword', autologinPasswordInput],
-].forEach(([key, input]) => {
-  input.addEventListener('change', async () => {
-    await adapter.set(key, input.value);
-  });
-});
-
-// ── Инициализация ───────────────────────────────────────────────────────────
 loadSettings();
