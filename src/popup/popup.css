@@ -540,3 +540,15 @@ body {
   accent-color: var(--popup-primary);
   flex-shrink: 0;
 }
+
+/* ── Mode warning (credentials security note) ───────────────────────── */
+.mode-warning {
+  font-size: 10px;
+  line-height: 1.4;
+  color: var(--popup-on-primary-cont);
+  background: color-mix(in srgb, var(--popup-error) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--popup-error) 30%, transparent);
+  border-radius: 8px;
+  padding: 5px 8px;
+  margin-top: 2px;
+}

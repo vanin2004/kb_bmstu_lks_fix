@@ -40,6 +40,7 @@ const autologinPasswordInput        = document.getElementById('autologin-passwor
 const autologinModeCredentialsRadio = document.getElementById('autologin-mode-credentials');
 const autologinModeAutofillRadio    = document.getElementById('autologin-mode-autofill');
 const autologinCredentialsSection   = document.getElementById('autologin-credentials-section');
+const autologinCredentialsWarning   = document.getElementById('autologin-credentials-warning');
 
 // ── Last-saved state per settings panel ─────────────────────────────────────
 // Populated on loadSettings; updated on Apply; used by Cancel to revert fields.
@@ -279,7 +280,10 @@ autologinEnabledCheckbox.addEventListener('change', async () => {
 
 // ── Autologin: переключение видимости блока с учётными данными ───────────────
 function updateAutologinCredentialsVisibility() {
-  autologinCredentialsSection.style.display = autologinModeCredentialsRadio.checked ? '' : 'none';
+  const isCredentials = autologinModeCredentialsRadio.checked;
+  autologinCredentialsSection.style.display = isCredentials ? '' : 'none';
+  if (autologinCredentialsWarning)
+    autologinCredentialsWarning.style.display = isCredentials ? '' : 'none';
 }
 
 autologinModeCredentialsRadio.addEventListener('change', updateAutologinCredentialsVisibility);
