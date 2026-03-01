@@ -80,6 +80,16 @@ function injectAutoFilenamePanel(uploadForm) {
   workInput.className = 'kb-autoname-input';
   workInput.placeholder = 'Название работы';
 
+  // При выборе файла — подставить имя без расширения как название работы
+  if (fileInput) {
+    fileInput.addEventListener('change', () => {
+      const filename = fileInput.files[0]?.name || '';
+      if (filename && !workInput.value) {
+        workInput.value = filename.replace(/\.[^.]+$/, '');
+      }
+    });
+  }
+
   const fillBtn = document.createElement('button');
   fillBtn.type = 'button';
   fillBtn.className = 'kb-btn kb-autoname-fill-btn';
