@@ -17,11 +17,15 @@
     },
     "default_title": "kb_bmstu_lks_fix"
   },
+  "background": {
+    "scripts": ["src/background.js"]
+  },
   "permissions": [
     "storage",
     "activeTab",
     "tabs",
-    "*://e-learning.bmstu.ru/kaluga/*"
+    "*://e-learning.bmstu.ru/kaluga/*",
+    "https://proxy.bmstu.ru:8443/*"
   ],
   "content_scripts": [
     {
@@ -45,6 +49,7 @@
         "src/content/modules/course-page.js",
         "src/content/modules/main-page.js",
         "src/content/modules/auto-filename.js",
+        "src/content/modules/autologin.js",
         "src/content/modules/messages.js",
         "src/content/init.js"
       ],
@@ -52,9 +57,15 @@
         "src/styles/content-elements.css"
       ],
       "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://proxy.bmstu.ru:8443/cas/login*"],
+      "js": [
+        "src/content/modules/autologin-cas.js"
+      ],
+      "run_at": "document_start"
     }
-  ],
-  "web_accessible_resources": [
+  ], [
     "src/styles/theme-override.css"
   ],
   "browser_specific_settings": {

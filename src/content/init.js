@@ -32,6 +32,9 @@
   // Автозаполнение имени файла (работает на всех страницах с диалогом загрузки)
   await initAutoFilename();
 
+  // Автовход через CAS (работает на всех страницах)
+  await initAutologin();
+
   if (isMainPage) {
     await initMainPage();
   } else if (isCoursePage || isModPage) {

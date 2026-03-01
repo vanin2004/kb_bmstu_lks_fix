@@ -31,6 +31,10 @@ const studentLastnameInput            = document.getElementById('student-lastnam
 const studentFirstnameInput           = document.getElementById('student-firstname-input');
 const studentMiddlenameInput          = document.getElementById('student-middlename-input');
 const studentGroupInput               = document.getElementById('student-group-input');
+const autologinEnabledCheckbox        = document.getElementById('autologin-enabled-checkbox');
+const autologinCredentials            = document.getElementById('autologin-credentials');
+const autologinUsernameInput          = document.getElementById('autologin-username-input');
+const autologinPasswordInput          = document.getElementById('autologin-password-input');
 
 // ── Отправка сообщения в content-script активной вкладки ────────────────────
 async function sendToContentScript(message) {
@@ -53,6 +57,11 @@ function setThemeOptionsVisible(visible) {
 // ── Показать/скрыть блок данных студента ─────────────────────────────
 function setStudentInfoVisible(visible) {
   studentInfoOptions.style.display = visible ? '' : 'none';
+}
+
+// ── Показать/скрыть поля логина/пароля автовхода ────────────────────────────
+function setAutologinCredentialsVisible(visible) {
+  autologinCredentials.style.display = visible ? '' : 'none';
 }
 
 // ── Переключить вид кнопок режима редактирования ────────────────────────────
@@ -91,6 +100,9 @@ async function loadSettings() {
     'studentFirstname',
     'studentMiddlename',
     'studentGroup',
+    'autologinEnabled',
+    'autologinUsername',
+    'autologinPassword',
   ]);
 
   setEditModeButtons(cfg.editMode ?? false);
@@ -108,9 +120,13 @@ async function loadSettings() {
   studentFirstnameInput.value             = cfg.studentFirstname         ?? '';
   studentMiddlenameInput.value            = cfg.studentMiddlename        ?? '';
   studentGroupInput.value                 = cfg.studentGroup             ?? '';
+  autologinEnabledCheckbox.checked        = cfg.autologinEnabled          ?? false;
+  autologinUsernameInput.value            = cfg.autologinUsername         ?? '';
+  autologinPasswordInput.value            = cfg.autologinPassword         ?? '';
 
   setThemeOptionsVisible(themeEnabledCheckbox.checked);
   setStudentInfoVisible(featureAutoFilenameCheckbox.checked);
+  setAutologinCredentialsVisible(autologinEnabledCheckbox.checked);
   applyPopupTheme(
     cfg.themeEnabled ?? false,
     cfg.theme        ?? 'system',
@@ -224,6 +240,23 @@ featureAutoFilenameCheckbox.addEventListener('change', async () => {
   input.addEventListener('change', async () => {
     await adapter.set(key, input.value);
     await sendToContentScript({ type: 'studentInfoChanged', key, value: input.value });
+  });
+});
+
+// Автовход — включение/отключение
+autologinEnabledCheckbox.addEventListener('change', async () => {
+  const value = autologinEnabledCheckbox.checked;
+  await adapter.set('autologinEnabled', value);
+  setAutologinCredentialsVisible(value);
+});
+
+// Автовход — логин и пароль сохраняются при изменении
+[
+  ['autologinUsername', autologinUsernameInput],
+  ['autologinPassword', autologinPasswordInput],
+].forEach(([key, input]) => {
+  input.addEventListener('change', async () => {
+    await adapter.set(key, input.value);
   });
 });
 

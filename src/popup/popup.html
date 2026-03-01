@@ -107,7 +107,7 @@
 
             <label class="checkbox-label" title="Меняет классы odd и even местами у карточек курсов">
                 <input type="checkbox" id="feature-swap-odd-even-checkbox">
-                <span class="label-text">Поменять odd/even местами</span>
+                <span class="label-text">Поменять местами стиль четных и нечетных карточек курсов</span>
             </label>
 
             <label class="checkbox-label"
@@ -132,6 +132,33 @@
                 <div class="input-row">
                     <label for="student-group-input">Группа</label>
                     <input type="text" id="student-group-input" class="popup-text-input" placeholder="КБ1-21">
+                </div>
+            </div>
+        </div>
+
+        <hr class="divider">
+
+        <!-- Автовход -->
+        <div class="popup-section">
+            <div class="section-title">Автовход</div>
+
+            <label class="toggle-label"
+                title="Автоматически входить в систему при открытии страницы, если пользователь не авторизован">
+                <input type="checkbox" id="autologin-enabled-checkbox">
+                <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                <span class="label-text">Автоматический вход</span>
+            </label>
+
+            <div class="autologin-credentials" id="autologin-credentials">
+                <div class="input-row">
+                    <label for="autologin-username-input">Логин</label>
+                    <input type="text" id="autologin-username-input" class="popup-text-input" placeholder="ivanov_ii"
+                        autocomplete="username">
+                </div>
+                <div class="input-row">
+                    <label for="autologin-password-input">Пароль</label>
+                    <input type="password" id="autologin-password-input" class="popup-text-input" placeholder="••••••••"
+                        autocomplete="current-password">
                 </div>
             </div>
         </div>
