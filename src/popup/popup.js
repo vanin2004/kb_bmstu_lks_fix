@@ -266,7 +266,15 @@ featureAutoFilenameCheckbox.addEventListener('change', async () => {
 autologinEnabledCheckbox.addEventListener('change', async () => {
   const value = autologinEnabledCheckbox.checked;
   await adapter.set('autologinEnabled', value);
-  if (value && !isPanelOpen('autologin-panel')) setPanelOpen('autologin-panel', true);
+  if (value) {
+    if (!isPanelOpen('autologin-panel')) setPanelOpen('autologin-panel', true);
+  } else {
+    // Удаляем учётные данные из хранилища при отключении автовхода
+    await adapter.remove(['autologinUsername', 'autologinPassword']);
+    autologinUsernameInput.value = '';
+    autologinPasswordInput.value = '';
+    saved['autologin-panel'] = { ...saved['autologin-panel'], autologinUsername: '', autologinPassword: '' };
+  }
 });
 
 // ── Autologin: переключение видимости блока с учётными данными ───────────────

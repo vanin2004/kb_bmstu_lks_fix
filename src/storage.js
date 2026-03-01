@@ -23,8 +23,9 @@
     // Firefox — предпочтительный API с нативными Promise
     if (typeof browser !== 'undefined' && browser.storage) {
       return {
-        get: function (keys) { return browser.storage.local.get(keys); },
-        set: function (data) { return browser.storage.local.set(data); },
+        get:    function (keys) { return browser.storage.local.get(keys); },
+        set:    function (data) { return browser.storage.local.set(data); },
+        remove: function (keys) { return browser.storage.local.remove(keys); },
       };
     }
 
@@ -44,6 +45,17 @@
       set: function (data) {
         return new Promise(function (resolve, reject) {
           chrome.storage.local.set(data, function () {
+            if (chrome.runtime.lastError) {
+              reject(chrome.runtime.lastError);
+            } else {
+              resolve();
+            }
+          });
+        });
+      },
+      remove: function (keys) {
+        return new Promise(function (resolve, reject) {
+          chrome.storage.local.remove(keys, function () {
             if (chrome.runtime.lastError) {
               reject(chrome.runtime.lastError);
             } else {
@@ -94,6 +106,15 @@
      */
     async saveAll(data) {
       await _storage.set(data);
+    }
+
+    /**
+     * Удалить один или несколько ключей.
+     * @param {string|string[]} keys
+     * @returns {Promise<void>}
+     */
+    async remove(keys) {
+      await _storage.remove(Array.isArray(keys) ? keys : [keys]);
     }
   }
 
