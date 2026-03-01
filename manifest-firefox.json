@@ -65,7 +65,8 @@
       ],
       "run_at": "document_start"
     }
-  ], [
+  ],
+  "web_accessible_resources": [
     "src/styles/theme-override.css"
   ],
   "browser_specific_settings": {
