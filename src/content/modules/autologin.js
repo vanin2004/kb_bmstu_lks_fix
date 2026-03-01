@@ -9,16 +9,29 @@
 'use strict';
 
 async function initAutologin() {
-  const cfg = await adapter.getMultiple(['autologinEnabled', 'autologinUsername', 'autologinPassword']);
+  const cfg = await adapter.getMultiple(['autologinEnabled', 'autologinMode', 'autologinUsername', 'autologinPassword']);
 
-  if (!cfg.autologinEnabled || !cfg.autologinUsername || !cfg.autologinPassword) return;
+  if (!cfg.autologinEnabled) return;
+
+  const mode = cfg.autologinMode ?? 'credentials';
+
+  if (mode === 'credentials' && (!cfg.autologinUsername || !cfg.autologinPassword)) return;
 
   // Проверяем наличие блока "Вы не вошли в систему" в .logininfo
   const loginInfo = document.querySelector('.logininfo');
   const isGuest = loginInfo && loginInfo.textContent.includes('Вы не вошли в систему');
   if (!isGuest) return;
 
-  // Показываем экран загрузки поверх страницы
+  if (mode === 'autofill') {
+    // Режим автозаполнения браузера: перенаправляем на CAS —
+    // браузер сам заполнит учётные данные через встроенный менеджер паролей
+    const _SERVICE_URL = 'https://e-learning.bmstu.ru/kaluga/login/index.php?authCAS=CAS';
+    const casUrl = 'https://proxy.bmstu.ru:8443/cas/login?service=' + encodeURIComponent(_SERVICE_URL) + '#kb_autologin';
+    window.location.href = casUrl;
+    return;
+  }
+
+  // Режим credentials: показываем экран загрузки поверх страницы
   const overlay = _autologinCreateOverlay();
   document.body.appendChild(overlay);
 

@@ -158,15 +158,27 @@
             </div>
 
             <div class="settings-panel" id="autologin-panel" style="display:none">
-                <div class="input-row">
-                    <label for="autologin-username-input">Логин</label>
-                    <input type="text" id="autologin-username-input" class="popup-text-input" placeholder="ivanov_ii"
-                        autocomplete="username">
+                <div class="radio-group">
+                    <label class="radio-label">
+                        <input type="radio" name="autologin-mode" id="autologin-mode-credentials" value="credentials">
+                        <span class="label-text">Логин и пароль</span>
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="autologin-mode" id="autologin-mode-autofill" value="autofill">
+                        <span class="label-text">Автозаполнение браузера</span>
+                    </label>
                 </div>
-                <div class="input-row">
-                    <label for="autologin-password-input">Пароль</label>
-                    <input type="password" id="autologin-password-input" class="popup-text-input" placeholder="••••••••"
-                        autocomplete="current-password">
+                <div id="autologin-credentials-section">
+                    <div class="input-row">
+                        <label for="autologin-username-input">Логин</label>
+                        <input type="text" id="autologin-username-input" class="popup-text-input"
+                            placeholder="ivanov_ii" autocomplete="username">
+                    </div>
+                    <div class="input-row">
+                        <label for="autologin-password-input">Пароль</label>
+                        <input type="password" id="autologin-password-input" class="popup-text-input"
+                            placeholder="••••••••" autocomplete="current-password">
+                    </div>
                 </div>
                 <div class="settings-actions">
                     <button class="settings-apply-btn" data-panel="autologin-panel">Применить</button>

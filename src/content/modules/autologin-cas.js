@@ -11,6 +11,88 @@
  *   2. Если ошибки нет и URL содержит #kb_autologin — заполняем форму.
  */
 
+/**
+ * Ждёт, пока браузер применит автозаполнение к полю.
+ * Возвращает true если поле заполнено, false если истёк таймаут.
+ */
+function waitForAutofill(field, timeoutMs = 3000) {
+  if (field.value) return Promise.resolve(true);
+
+  return new Promise((resolve) => {
+    const deadline = Date.now() + timeoutMs;
+
+    const done = (result) => {
+      clearInterval(poll);
+      field.removeEventListener('input',  onEvent);
+      field.removeEventListener('change', onEvent);
+      resolve(result);
+    };
+
+    // Некоторые браузеры стреляют 'input' / 'change' при автозаполнении
+    const onEvent = () => { if (field.value) done(true); };
+    field.addEventListener('input',  onEvent);
+    field.addEventListener('change', onEvent);
+
+    // Polling на случай если событие не пришло
+    const poll = setInterval(() => {
+      if (field.value)        { done(true);  return; }
+      if (Date.now() > deadline) { done(false); }
+    }, 50);
+  });
+}
+
+/**
+ * Устанавливает значение поля и диспатчит события input/change,
+ * чтобы нативный JavaScript CAS-страницы увидел изменение и разблокировал кнопку отправки.
+ */
+function setFieldValue(field, value) {
+  field.value = value;
+  field.dispatchEvent(new Event('input',  { bubbles: true }));
+  field.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
+/**
+ * Ждёт пока CAS JS сам снимет disabled с кнопки отправки.
+ * Возвращает true если кнопка активирована, false если истёк таймаут.
+ */
+function waitForButtonEnabled(btn, timeoutMs = 2000) {
+  if (!btn.disabled) return Promise.resolve(true);
+  return new Promise((resolve) => {
+    const deadline = Date.now() + timeoutMs;
+    const poll = setInterval(() => {
+      if (!btn.disabled)         { clearInterval(poll); resolve(true);  return; }
+      if (Date.now() > deadline) { clearInterval(poll); resolve(false); }
+    }, 30);
+  });
+}
+
+/**
+ * Отправляет форму CAS:
+ *   1. Диспатчим input на полях — CAS JS увидит заполненные поля и снимет disabled.
+ *   2. Ждём пока CAS JS сам включит кнопку.
+ *   3. Если не включил — снимаем disabled принудительно.
+ *   4. Нажимаем кнопку нативным .click().
+ */
+async function submitCasForm(form) {
+  const btn           = form.querySelector('input[type="submit"][name="submit"], button[type="submit"]');
+  const usernameField = form.querySelector('input[name="username"]');
+  const passwordField = form.querySelector('input[name="password"]');
+
+  // Триггерим CAS JS чтобы он увидел значения и снял disabled
+  if (usernameField) usernameField.dispatchEvent(new Event('input', { bubbles: true }));
+  if (passwordField) passwordField.dispatchEvent(new Event('input', { bubbles: true }));
+
+  if (btn) {
+    await waitForButtonEnabled(btn, 2000);
+    btn.removeAttribute('disabled'); // принудительно если CAS JS не среагировал
+    btn.click();
+    return;
+  }
+
+  // Fallback: кнопки нет
+  try { form.requestSubmit(); } catch { HTMLFormElement.prototype.submit.call(form); }
+}
+
 (async () => {
   const params  = new URLSearchParams(window.location.search);
   const service = params.get('service') ?? '';
@@ -39,23 +121,39 @@
 
   let cfg;
   try {
-    cfg = await extAPI.storage.local.get(['autologinEnabled', 'autologinUsername', 'autologinPassword']);
+    cfg = await extAPI.storage.local.get(['autologinEnabled', 'autologinMode', 'autologinUsername', 'autologinPassword']);
   } catch {
     return;
   }
 
-  if (!cfg.autologinEnabled || !cfg.autologinUsername || !cfg.autologinPassword) return;
+  if (!cfg.autologinEnabled) return;
+
+  const mode = cfg.autologinMode ?? 'credentials';
+
+  if (mode === 'autofill') {
+    const passwordField = document.querySelector('input[name="password"]');
+    if (!passwordField) return;
+    const filled = await waitForAutofill(passwordField, 3000);
+    if (!filled) return; // браузер не заполнил — не отправляем пустую форму
+    const form = passwordField.closest('form');
+    if (!form) return;
+    await submitCasForm(form);
+    return;
+  }
+
+  // Режим credentials: заполняем форму из хранилища расширения
+  if (!cfg.autologinUsername || !cfg.autologinPassword) return;
 
   const usernameField = document.querySelector('input[name="username"]');
   const passwordField = document.querySelector('input[name="password"]');
   if (!usernameField || !passwordField) return;
 
-  usernameField.value = cfg.autologinUsername;
-  passwordField.value = cfg.autologinPassword;
+  // setFieldValue ставит value и диспатчит input/change чтобы CAS JS разблокировал кнопку
+  setFieldValue(usernameField, cfg.autologinUsername);
+  setFieldValue(passwordField, cfg.autologinPassword);
 
   const form = usernameField.closest('form');
   if (!form) return;
 
-  // form.submit может быть перекрыт <input name="submit"> внутри формы CAS.
-  HTMLFormElement.prototype.submit.call(form);
+  await submitCasForm(form);
 })();
