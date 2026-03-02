@@ -81,12 +81,10 @@ async function injectCourseInfoBlock() {
   }
 
   if (gradeInfo) {
-    const gradeText = gradeInfo.grade && gradeInfo.grade !== '-' ? gradeInfo.grade : '—';
+    const gradeText = formatGrade(gradeInfo.grade);
     const gradeEl = document.createElement('a');
     gradeEl.className = 'badge badge-secondary kb-course-grade';
     gradeEl.href      = gradeInfo.gradeUrl;
-    gradeEl.target    = '_blank';
-    gradeEl.rel       = 'noopener noreferrer';
     gradeEl.title     = 'Отчёт об оценках по предмету';
     gradeEl.textContent = `Оценка: ${gradeText}`;
     block.appendChild(gradeEl);

@@ -561,8 +561,9 @@ html[data-theme="dark"] .kb-autologin-field label {
   float: right;
   margin-left: 8px;
   font-size: 11px;
-  text-decoration: none !important;
-}
+  text-decoration: none !important;  padding: .25em .4em !important;
+  text-indent: 0 !important;
+  text-align: center !important;}
 .kb-activity-grade:hover {
   text-decoration: none !important;
 }

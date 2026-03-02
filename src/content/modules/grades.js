@@ -22,6 +22,15 @@ function getUserIdFromPage() {
   return el ? el.dataset.userid : null;
 }
 
+// «15,00» → «15», «14,50» → «14,50», «-»/«—» → «—»
+function formatGrade(raw) {
+  if (!raw || raw === '-' || raw === '\u2014') return '\u2014';
+  // Заменяем запятую на точку для parseFloat
+  const num = parseFloat(raw.replace(',', '.'));
+  if (isNaN(num)) return raw;
+  return Number.isInteger(num) ? String(num) : raw;
+}
+
 function getGradeReportUrl(userId) {
   return `https://e-learning.bmstu.ru/kaluga/grade/report/overview/index.php?userid=${userId}&id=1`;
 }
@@ -77,11 +86,17 @@ function parseCourseItemGrades(html) {
     if (!gradeCell) return;
 
     const grade = gradeCell.textContent.trim();
+
+    const rangeCell = row.querySelector('td.column-range');
+    const rangeText = rangeCell ? rangeCell.textContent.trim() : '';
+    // Формат диапазона: «0–15» (через em/en dash)
+    const rangeMax  = rangeText.split(/[\u2013\u2014-]/).pop()?.trim() || '';
+
     let gradeUrl = href;
     if (!gradeUrl.startsWith('http')) {
       gradeUrl = 'https://e-learning.bmstu.ru' + (gradeUrl.startsWith('/') ? '' : '/') + gradeUrl;
     }
-    items[cmid] = { grade, gradeUrl };
+    items[cmid] = { grade, rangeMax, gradeUrl };
   });
 
   return items;
@@ -124,13 +139,11 @@ function applyGradeBadge(box, courseId) {
   const info = _courseGrades[courseId];
   if (!info) return;
 
-  const gradeText = info.grade && info.grade !== '-' ? info.grade : '—';
+  const gradeText = formatGrade(info.grade);
 
   const badge = document.createElement('a');
   badge.className = 'kb-grade-badge badge badge-secondary';
   badge.href      = info.gradeUrl;
-  badge.target    = '_blank';
-  badge.rel       = 'noopener noreferrer';
   badge.title     = 'Открыть отчёт об оценках по предмету';
   badge.textContent = gradeText;
 
@@ -166,15 +179,15 @@ function applyActivityGradeBadge(activity) {
   const info = itemGrades[cmid];
   if (!info) return;
 
-  const gradeText = info.grade && info.grade !== '-' ? info.grade : '\u2014';
+  const gradeText = formatGrade(info.grade);
+  const maxText   = info.rangeMax ? formatGrade(info.rangeMax) : '';
+  const badgeText = maxText ? `${gradeText} / ${maxText}` : gradeText;
 
   const badge = document.createElement('a');
   badge.className = 'kb-activity-grade badge badge-secondary';
   badge.href      = info.gradeUrl;
-  badge.target    = '_blank';
-  badge.rel       = 'noopener noreferrer';
-  badge.title     = '\u041e\u0442\u043a\u0440\u044b\u0442\u044c \u043e\u0442\u0447\u0451\u0442 \u043e\u0431 \u043e\u0446\u0435\u043d\u043a\u0435 \u0437\u0430 \u0437\u0430\u0434\u0430\u043d\u0438\u0435';
-  badge.textContent = gradeText;
+  badge.title     = 'Открыть отчёт об оценке за задание';
+  badge.textContent = badgeText;
 
   const instance = activity.querySelector('.activityinstance');
   if (instance) instance.insertAdjacentElement('afterbegin', badge);
