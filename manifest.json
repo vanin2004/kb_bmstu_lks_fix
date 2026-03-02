@@ -70,7 +70,7 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["src/styles/theme-override.css"],
+      "resources": ["src/styles/theme-override.css", "icons/icon48.png", "site_logo/*"],
       "matches": [
         "https://e-learning.bmstu.ru/*",
         "http://e-learning.bmstu.ru/*"

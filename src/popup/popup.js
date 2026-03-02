@@ -16,9 +16,11 @@ const editModeActiveBtns = document.getElementById('edit-mode-active-btns');
 const editModeSaveBtn    = document.getElementById('edit-mode-save-btn');
 const editModeCancelBtn  = document.getElementById('edit-mode-cancel-btn');
 
-const themeEnabledCheckbox = document.getElementById('theme-enabled-checkbox');
-const themeSelect          = document.getElementById('theme-select');
-const accentSelect         = document.getElementById('accent-select');
+const themeEnabledCheckbox   = document.getElementById('theme-enabled-checkbox');
+const themeSelect            = document.getElementById('theme-select');
+const accentSelect           = document.getElementById('accent-select');
+const replaceTabIconCheckbox = document.getElementById('tab-icon-select');
+const tabIconSelect          = replaceTabIconCheckbox; // alias — see usages below
 
 const hideCourseCategoryComboCheckbox = document.getElementById('hide-course-category-combo-checkbox');
 const hidePagingMoreLinkCheckbox      = document.getElementById('hide-paging-morelink-checkbox');
@@ -47,7 +49,7 @@ const resetAllBtn                   = document.getElementById('reset-all-btn');
 // ── Last-saved state per settings panel ─────────────────────────────────────
 // Populated on loadSettings; updated on Apply; used by Cancel to revert fields.
 const saved = {
-  'theme-panel':        { theme: 'system', accent: 'violet' },
+  'theme-panel':        { theme: 'system', accent: 'violet', replaceTabIcon: 'original' },
   'student-info-panel': { studentLastname: '', studentFirstname: '', studentMiddlename: '', studentGroup: '' },
   'autologin-panel':    { autologinMode: 'credentials', autologinUsername: '', autologinPassword: '' },
 };
@@ -97,11 +99,13 @@ const applyHandlers = {
   'theme-panel': async () => {
     const theme  = themeSelect.value;
     const accent = accentSelect.value;
-    await adapter.saveAll({ theme, accent });
-    saved['theme-panel'] = { theme, accent };
+    const replaceTabIcon = tabIconSelect.value;
+    await adapter.saveAll({ theme, accent, tabIcon: replaceTabIcon });
+    saved['theme-panel'] = { theme, accent, replaceTabIcon };
     applyPopupTheme(themeEnabledCheckbox.checked, theme, accent);
     await sendToContentScript({ type: 'themeChanged', key: 'theme',  value: theme });
     await sendToContentScript({ type: 'themeChanged', key: 'accent', value: accent });
+    await sendToContentScript({ type: 'replaceTabIconChanged', value: replaceTabIcon });
     setPanelOpen('theme-panel', false);
   },
 
@@ -136,9 +140,10 @@ const applyHandlers = {
 // ── Cancel: revert fields to last saved state then close ─────────────────────
 const cancelHandlers = {
   'theme-panel': () => {
-    const { theme, accent } = saved['theme-panel'];
+    const { theme, accent, replaceTabIcon } = saved['theme-panel'];
     themeSelect.value  = theme;
     accentSelect.value = accent;
+    tabIconSelect.value = replaceTabIcon;
     applyPopupTheme(themeEnabledCheckbox.checked, theme, accent);
     setPanelOpen('theme-panel', false);
   },
@@ -305,6 +310,7 @@ resetAllBtn.addEventListener('click', async () => {
     themeEnabled:            false,
     theme:                   'system',
     accent:                  'violet',
+    tabIcon:                 'original',
     hideCourseCategoryCombo: false,
     hidePagingMoreLink:      false,
     hideEnrolIcon:           false,
@@ -322,8 +328,9 @@ resetAllBtn.addEventListener('click', async () => {
   themeEnabledCheckbox.checked            = false;
   themeSelect.value                       = 'system';
   accentSelect.value                      = 'violet';
+  tabIconSelect.value                     = 'original';
   applyPopupTheme(false, 'system', 'violet');
-  saved['theme-panel']                    = { theme: 'system', accent: 'violet' };
+  saved['theme-panel']                    = { theme: 'system', accent: 'violet', replaceTabIcon: 'original' };
 
   hideCourseCategoryComboCheckbox.checked = false;
   hidePagingMoreLinkCheckbox.checked      = false;
@@ -353,7 +360,7 @@ resetAllBtn.addEventListener('click', async () => {
 async function loadSettings() {
   const cfg = await adapter.getMultiple([
     'editMode',
-    'themeEnabled', 'theme', 'accent',
+    'themeEnabled', 'theme', 'accent', 'tabIcon',
     'hideCourseCategoryCombo', 'hidePagingMoreLink', 'hideEnrolIcon', 'hideMainPageHeader',
     'hideHeaderLogo',
     'featureSortAlpha', 'featureSwapOddEven', 'featureAutoFilename',
@@ -363,10 +370,11 @@ async function loadSettings() {
 
   setEditModeButtons(cfg.editMode ?? false);
 
-  themeEnabledCheckbox.checked = cfg.themeEnabled ?? false;
-  themeSelect.value            = cfg.theme        ?? 'system';
-  accentSelect.value           = cfg.accent       ?? 'violet';
-  saved['theme-panel'] = { theme: themeSelect.value, accent: accentSelect.value };
+  themeEnabledCheckbox.checked   = cfg.themeEnabled  ?? false;
+  themeSelect.value              = cfg.theme         ?? 'system';
+  accentSelect.value             = cfg.accent        ?? 'violet';
+  tabIconSelect.value            = cfg.tabIcon       ?? 'original';
+  saved['theme-panel'] = { theme: themeSelect.value, accent: accentSelect.value, replaceTabIcon: tabIconSelect.value };
 
   hideCourseCategoryComboCheckbox.checked = cfg.hideCourseCategoryCombo ?? false;
   hidePagingMoreLinkCheckbox.checked      = cfg.hidePagingMoreLink      ?? false;

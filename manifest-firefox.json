@@ -67,7 +67,9 @@
     }
   ],
   "web_accessible_resources": [
-    "src/styles/theme-override.css"
+    "src/styles/theme-override.css",
+    "icons/icon48.png",
+    "site_logo/*"
   ],
   "browser_specific_settings": {
     "gecko": {

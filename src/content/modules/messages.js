@@ -59,6 +59,11 @@ extAPI.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       sendResponse && sendResponse({ ok: true });
       break;
 
+    case 'replaceTabIconChanged':
+      applyFaviconReplacement(message.value);
+      sendResponse && sendResponse({ ok: true });
+      break;
+
     case 'featuresChanged':
       if (message.features.sortAlpha   !== undefined) _features.sortAlpha   = message.features.sortAlpha;
       if (message.features.swapOddEven !== undefined) _features.swapOddEven = message.features.swapOddEven;
@@ -80,6 +85,7 @@ extAPI.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
     case 'resetAllSettings':
       applyTheme(false, 'system', 'violet');
+      applyFaviconReplacement('original');
       applyCourseCategoryComboVisibility(false);
       applyPagingMoreLinkVisibility(false);
       applyEnrolIconVisibility(false);
