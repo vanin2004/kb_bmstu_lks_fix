@@ -35,6 +35,9 @@
   // Автовход через CAS (работает на всех страницах)
   await initAutologin();
 
+  // Удобная навигация (работает на всех страницах)
+  await initNavigation();
+
   if (isMainPage) {
     await initMainPage();
     await initGrades();

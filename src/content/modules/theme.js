@@ -40,8 +40,24 @@ function applyFaviconReplacement(logo) {
   }
 }
 
+// Миграция старых имён логотипов (With-BG → No-BG)
+const _LOGO_MIGRATION = {
+  'Logo_Color_With-BG.svg': 'Logo_Color_No-BG.svg',
+  'Logo_Blue_With-BG.svg':  'Logo_Blue_No-BG.svg',
+  'Logo_Black_With-BG.svg': 'Logo_Black_No-BG.svg',
+  'Logo_Red_With-BG.svg':   'Logo_Red_No-BG.svg',
+};
+
 async function initTheme() {
   const cfg = await adapter.getMultiple(['themeEnabled', 'theme', 'accent', 'tabIcon']);
+
+  // Мигрируем устаревшее значение если нужно
+  let tabIcon = cfg.tabIcon || 'original';
+  if (_LOGO_MIGRATION[tabIcon]) {
+    tabIcon = _LOGO_MIGRATION[tabIcon];
+    await adapter.set('tabIcon', tabIcon);
+  }
+
   applyTheme(cfg.themeEnabled, cfg.theme, cfg.accent);
-  applyFaviconReplacement(cfg.tabIcon || 'original');
+  applyFaviconReplacement(tabIcon);
 }

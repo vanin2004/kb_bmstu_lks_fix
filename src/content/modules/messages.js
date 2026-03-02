@@ -88,6 +88,11 @@ extAPI.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       sendResponse && sendResponse({ ok: true });
       break;
 
+    case 'featureNavChanged':
+      applyFeatureNav(message.value);
+      sendResponse && sendResponse({ ok: true });
+      break;
+
     case 'resetAllSettings':
       applyTheme(false, 'system', 'violet');
       applyFaviconReplacement('original');
@@ -104,6 +109,7 @@ extAPI.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       stopAutoFilenameObserver();
       _featureAutoFilename = false;
       applyFeatureGrades(false);
+      applyFeatureNav(false);
       sendResponse && sendResponse({ ok: true });
       break;
 

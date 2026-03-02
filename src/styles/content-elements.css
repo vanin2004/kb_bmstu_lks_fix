@@ -535,6 +535,29 @@ html[data-theme="dark"] .kb-autologin-field label {
   }
 }
 
+/* ── Удобная навигация ────────────────────────────────────────────────────── */
+.kb-nav-row {
+  display: flex;
+  align-items: center;
+}
+/* Блок уведомлений: скрытая панель выводится позиционированием, не влияет на flex */
+.kb-nav-row > .popover-region {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.kb-nav-row > .popover-region > .popover-region-container {
+  position: absolute;
+  top: 100%;
+  right: 0;
+}
+/* Логотип ЛКС — чуть крупнее FA-иконок */
+.kb-nav-lks-icon {
+  height: 1.8em;
+  width: auto;
+  vertical-align: -0.4em;
+}
+
 /* ── Значок оценки на карточке курса (главная страница) ────────────────── */
 .kb-grade-badge {
   float: right;

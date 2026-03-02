@@ -32,6 +32,7 @@ const featureSortAlphaCheckbox    = document.getElementById('feature-sort-alpha-
 const featureSwapOddEvenCheckbox  = document.getElementById('feature-swap-odd-even-checkbox');
 const featureAutoFilenameCheckbox = document.getElementById('feature-auto-filename-checkbox');
 const featureGradesCheckbox       = document.getElementById('feature-grades-checkbox');
+const featureNavCheckbox          = document.getElementById('feature-nav-checkbox');
 const autologinEnabledCheckbox    = document.getElementById('autologin-enabled-checkbox');
 
 const studentLastnameInput   = document.getElementById('student-lastname-input');
@@ -284,6 +285,12 @@ featureGradesCheckbox.addEventListener('change', async () => {
   await sendToContentScript({ type: 'featureGradesChanged', value });
 });
 
+featureNavCheckbox.addEventListener('change', async () => {
+  const value = featureNavCheckbox.checked;
+  await adapter.set('featureNav', value);
+  await sendToContentScript({ type: 'featureNavChanged', value });
+});
+
 autologinEnabledCheckbox.addEventListener('change', async () => {
   const value = autologinEnabledCheckbox.checked;
   await adapter.set('autologinEnabled', value);
@@ -327,6 +334,7 @@ resetAllBtn.addEventListener('click', async () => {
     featureSwapOddEven:      false,
     featureAutoFilename:     false,
     featureGrades:           false,
+    featureNav:              false,
     autologinEnabled:        false,
     autologinMode:           'credentials',
   });
@@ -350,6 +358,7 @@ resetAllBtn.addEventListener('click', async () => {
   featureSwapOddEvenCheckbox.checked      = false;
   featureAutoFilenameCheckbox.checked     = false;
   featureGradesCheckbox.checked           = false;
+  featureNavCheckbox.checked              = false;
 
   autologinEnabledCheckbox.checked        = false;
   autologinUsernameInput.value            = '';
@@ -372,7 +381,7 @@ async function loadSettings() {
     'themeEnabled', 'theme', 'accent', 'tabIcon',
     'hideCourseCategoryCombo', 'hidePagingMoreLink', 'hideEnrolIcon', 'hideMainPageHeader',
     'hideHeaderLogo',
-    'featureSortAlpha', 'featureSwapOddEven', 'featureAutoFilename', 'featureGrades',
+    'featureSortAlpha', 'featureSwapOddEven', 'featureAutoFilename', 'featureGrades', 'featureNav',
     'studentLastname', 'studentFirstname', 'studentMiddlename', 'studentGroup',
     'autologinEnabled', 'autologinMode', 'autologinUsername', 'autologinPassword',
   ]);
@@ -395,6 +404,7 @@ async function loadSettings() {
   featureSwapOddEvenCheckbox.checked  = cfg.featureSwapOddEven  ?? false;
   featureAutoFilenameCheckbox.checked = cfg.featureAutoFilename ?? false;
   featureGradesCheckbox.checked       = cfg.featureGrades       ?? false;
+  featureNavCheckbox.checked          = cfg.featureNav          ?? false;
 
   studentLastnameInput.value   = cfg.studentLastname   ?? '';
   studentFirstnameInput.value  = cfg.studentFirstname  ?? '';
