@@ -551,6 +551,11 @@ html[data-theme="dark"] .kb-autologin-field label {
   top: 100%;
   right: 0;
 }
+/* Скрыть стрелку-каретку у кнопки пользователя — она не нужна, т.к. меню открывается кликом */
+.kb-nav-active .usermenu b.caret {
+  display: none;
+}
+
 /* Логотип ЛКС — чуть крупнее FA-иконок */
 .kb-nav-lks-icon {
   height: 1.8em;

@@ -93,6 +93,19 @@ extAPI.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       sendResponse && sendResponse({ ok: true });
       break;
 
+    case 'fetchGroup':
+      fetchGroupFromProfile().then(async group => {
+        if (group) {
+          _studentInfo.group = group;
+          await adapter.saveAll({
+            studentGroup:            group,
+            studentGroupLastFetched: Date.now(),
+          });
+        }
+        sendResponse && sendResponse({ ok: true, group: group || null });
+      });
+      return true; // асинхронный ответ
+
     case 'resetAllSettings':
       applyTheme(false, 'system', 'violet');
       applyFaviconReplacement('original');
@@ -119,9 +132,14 @@ extAPI.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         studentFirstname:  'firstname',
         studentMiddlename: 'middlename',
         studentGroup:      'group',
+        autoGroupRefresh:  'autoGroupRefresh',
       };
       const field = keyMap[message.key];
-      if (field) _studentInfo[field] = message.value;
+      if (field === 'autoGroupRefresh') {
+        _autoGroupRefresh = message.value;
+      } else if (field) {
+        _studentInfo[field] = message.value;
+      }
       sendResponse && sendResponse({ ok: true });
       break;
     }

@@ -160,16 +160,41 @@ function extractStudentNameFromPage() {
   };
 }
 
+// ── Получение названия группы со страницы профиля ────────────────────────────
+
+async function fetchGroupFromProfile() {
+  const useridEl = document.querySelector('[data-userid]');
+  if (!useridEl) return null;
+  const userId = useridEl.dataset.userid;
+  try {
+    const resp = await fetch(`/kaluga/user/profile.php?id=${userId}`);
+    if (!resp.ok) return null;
+    const html = await resp.text();
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    for (const dt of doc.querySelectorAll('dt')) {
+      if (dt.textContent.trim() === 'Учебная группа') {
+        const dd = dt.closest('dl')?.querySelector('dd');
+        if (dd) return dd.textContent.trim();
+      }
+    }
+  } catch (e) {
+    console.warn('[kb_bmstu_lks_fix] fetchGroupFromProfile:', e);
+  }
+  return null;
+}
+
 // ── Инициализация ─────────────────────────────────────────────────────────────
 
 async function initAutoFilename() {
   const cfg = await adapter.getMultiple([
     'featureAutoFilename',
     'studentLastname', 'studentFirstname', 'studentMiddlename', 'studentGroup',
-    'autoFilenameSubjects',
+    'autoFilenameSubjects', 'autoGroupRefresh', 'studentGroupLastFetched',
   ]);
   _featureAutoFilename    = cfg.featureAutoFilename ?? false;
   _autoFilenameSubjects   = cfg.autoFilenameSubjects || {};
+  _autoGroupRefresh       = cfg.autoGroupRefresh ?? false;
   _studentInfo.lastname   = cfg.studentLastname   ?? '';
   _studentInfo.firstname  = cfg.studentFirstname  ?? '';
   _studentInfo.middlename = cfg.studentMiddlename ?? '';
@@ -186,6 +211,27 @@ async function initAutoFilename() {
         studentLastname:   detected.lastname,
         studentFirstname:  detected.firstname,
         studentMiddlename: detected.middlename,
+      });
+    }
+  }
+
+  // Автообновление группы — при первом входе за сутки
+  if (_autoGroupRefresh) {
+    const lastFetched  = cfg.studentGroupLastFetched ?? 0;
+    const tenDaysMs    = 10 * 24 * 60 * 60 * 1000;
+    if (Date.now() - lastFetched > tenDaysMs) {
+      // Фоновый запрос — не блокирует инициализацию
+      fetchGroupFromProfile().then(async group => {
+        if (group && group !== _studentInfo.group) {
+          _studentInfo.group = group;
+          await adapter.saveAll({
+            studentGroup:            group,
+            studentGroupLastFetched: Date.now(),
+          });
+        } else if (group) {
+          // Обновить время проверки даже если значение не изменилось
+          await adapter.set('studentGroupLastFetched', Date.now());
+        }
       });
     }
   }

@@ -44,3 +44,4 @@ let _studentInfo = {
 let _featureAutoFilename = false;
 let _currentCourseTitle = '';
 let _autoFilenameSubjects = {}; // { courseId: последний ввод пользователя }
+let _autoGroupRefresh = false;

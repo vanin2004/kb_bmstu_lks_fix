@@ -39,6 +39,7 @@ const studentLastnameInput   = document.getElementById('student-lastname-input')
 const studentFirstnameInput  = document.getElementById('student-firstname-input');
 const studentMiddlenameInput = document.getElementById('student-middlename-input');
 const studentGroupInput      = document.getElementById('student-group-input');
+const autoGroupRefreshCheckbox = document.getElementById('auto-group-refresh-checkbox');
 
 const autologinUsernameInput        = document.getElementById('autologin-username-input');
 const autologinPasswordInput        = document.getElementById('autologin-password-input');
@@ -52,7 +53,7 @@ const resetAllBtn                   = document.getElementById('reset-all-btn');
 // Populated on loadSettings; updated on Apply; used by Cancel to revert fields.
 const saved = {
   'theme-panel':        { theme: 'system', accent: 'violet', replaceTabIcon: 'original' },
-  'student-info-panel': { studentLastname: '', studentFirstname: '', studentMiddlename: '', studentGroup: '' },
+  'student-info-panel': { studentLastname: '', studentFirstname: '', studentMiddlename: '', studentGroup: '', autoGroupRefresh: false },
   'autologin-panel':    { autologinMode: 'credentials', autologinUsername: '', autologinPassword: '' },
 };
 
@@ -65,7 +66,15 @@ async function sendToContentScript(message) {
     console.warn('[kb_bmstu_lks_fix] sendMessage:', e.message || e);
   }
 }
-
+async function sendToContentScriptWithResponse(message) {
+  try {
+    const tabs = await extAPI.tabs.query({ active: true, currentWindow: true });
+    if (tabs && tabs[0]) return await extAPI.tabs.sendMessage(tabs[0].id, message);
+  } catch (e) {
+    console.warn('[kb_bmstu_lks_fix] sendMessage:', e.message || e);
+  }
+  return null;
+}
 function applyPopupTheme(themeEnabled, theme, accent) {
   const html = document.documentElement;
   if (themeEnabled) {
@@ -117,11 +126,20 @@ const applyHandlers = {
       studentFirstname:  studentFirstnameInput.value,
       studentMiddlename: studentMiddlenameInput.value,
       studentGroup:      studentGroupInput.value,
+      autoGroupRefresh:  autoGroupRefreshCheckbox.checked,
     };
     await adapter.saveAll(data);
     saved['student-info-panel'] = { ...data };
     for (const [key, value] of Object.entries(data)) {
       await sendToContentScript({ type: 'studentInfoChanged', key, value });
+    }
+    // Если включено автообновление — сразу получить группу и подставить в поле
+    if (autoGroupRefreshCheckbox.checked) {
+      const resp = await sendToContentScriptWithResponse({ type: 'fetchGroup' });
+      if (resp?.group) {
+        studentGroupInput.value = resp.group;
+        saved['student-info-panel'].studentGroup = resp.group;
+      }
     }
     setPanelOpen('student-info-panel', false);
   },
@@ -156,6 +174,7 @@ const cancelHandlers = {
     studentFirstnameInput.value  = s.studentFirstname;
     studentMiddlenameInput.value = s.studentMiddlename;
     studentGroupInput.value      = s.studentGroup;
+    autoGroupRefreshCheckbox.checked = s.autoGroupRefresh ?? false;
     setPanelOpen('student-info-panel', false);
   },
 
@@ -337,6 +356,7 @@ resetAllBtn.addEventListener('click', async () => {
     featureNav:              false,
     autologinEnabled:        false,
     autologinMode:           'credentials',
+    autoGroupRefresh:        false,
   });
   await adapter.remove(['autologinUsername', 'autologinPassword']);
 
@@ -359,6 +379,7 @@ resetAllBtn.addEventListener('click', async () => {
   featureAutoFilenameCheckbox.checked     = false;
   featureGradesCheckbox.checked           = false;
   featureNavCheckbox.checked              = false;
+  autoGroupRefreshCheckbox.checked        = false;
 
   autologinEnabledCheckbox.checked        = false;
   autologinUsernameInput.value            = '';
@@ -382,7 +403,7 @@ async function loadSettings() {
     'hideCourseCategoryCombo', 'hidePagingMoreLink', 'hideEnrolIcon', 'hideMainPageHeader',
     'hideHeaderLogo',
     'featureSortAlpha', 'featureSwapOddEven', 'featureAutoFilename', 'featureGrades', 'featureNav',
-    'studentLastname', 'studentFirstname', 'studentMiddlename', 'studentGroup',
+    'studentLastname', 'studentFirstname', 'studentMiddlename', 'studentGroup', 'autoGroupRefresh',
     'autologinEnabled', 'autologinMode', 'autologinUsername', 'autologinPassword',
   ]);
 
@@ -410,11 +431,13 @@ async function loadSettings() {
   studentFirstnameInput.value  = cfg.studentFirstname  ?? '';
   studentMiddlenameInput.value = cfg.studentMiddlename ?? '';
   studentGroupInput.value      = cfg.studentGroup      ?? '';
+  autoGroupRefreshCheckbox.checked = cfg.autoGroupRefresh ?? false;
   saved['student-info-panel'] = {
     studentLastname:   studentLastnameInput.value,
     studentFirstname:  studentFirstnameInput.value,
     studentMiddlename: studentMiddlenameInput.value,
     studentGroup:      studentGroupInput.value,
+    autoGroupRefresh:  autoGroupRefreshCheckbox.checked,
   };
 
   autologinEnabledCheckbox.checked = cfg.autologinEnabled ?? false;

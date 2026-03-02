@@ -150,9 +150,11 @@ function restoreUserMenu() {
 function applyFeatureNav(enabled) {
   _featureNav = enabled;
   if (enabled) {
+    document.body.classList.add('kb-nav-active');
     injectNavLinks();
     applyUserMenuDirect();
   } else {
+    document.body.classList.remove('kb-nav-active');
     removeNavLinks();
     restoreUserMenu();
   }
@@ -164,6 +166,7 @@ async function initNavigation() {
   const cfg = await adapter.getMultiple(['featureNav']);
   _featureNav = !!(cfg.featureNav);
   if (_featureNav) {
+    document.body.classList.add('kb-nav-active');
     injectNavLinks();
     applyUserMenuDirect();
   }
