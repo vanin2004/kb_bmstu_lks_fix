@@ -50,6 +50,13 @@ function applyImageVisibility(box, courseId, hiddenImages) {
   img.style.display = hiddenImages[courseId] ? 'none' : '';
 }
 
+// ── Вспомогательная функция ─────────────────────────────────────────────────
+
+/** Курсы внутри #frontpage-category-combo не участвуют в скрытии/редактировании */
+function isInCategoryCombo(el) {
+  return !!el.closest('#frontpage-category-combo');
+}
+
 // ── Панель редактирования одной карточки ─────────────────────────────────────
 
 function createEditPanel(box, courseId) {
@@ -215,6 +222,7 @@ function createBulkToolbar() {
   selectAllBtn.addEventListener('click', () => {
     const boxes = document.querySelectorAll('.coursebox[data-courseid]');
     boxes.forEach(box => {
+      if (isInCategoryCombo(box)) return;
       const id  = box.dataset.courseid;
       _editState.hiddenItems[id] = true;
       const chk = box.querySelector('.kb-hide-checkbox');
@@ -230,6 +238,7 @@ function createBulkToolbar() {
   resetHiddenBtn.addEventListener('click', () => {
     const boxes = document.querySelectorAll('.coursebox[data-courseid]');
     boxes.forEach(box => {
+      if (isInCategoryCombo(box)) return;
       const id = box.dataset.courseid;
       delete _editState.hiddenItems[id];
       const chk = box.querySelector('.kb-hide-checkbox');
@@ -244,6 +253,7 @@ function createBulkToolbar() {
   invertBtn.addEventListener('click', () => {
     const boxes = document.querySelectorAll('.coursebox[data-courseid]');
     boxes.forEach(box => {
+      if (isInCategoryCombo(box)) return;
       const id  = box.dataset.courseid;
       _editState.hiddenItems[id] = !_editState.hiddenItems[id];
       const chk = box.querySelector('.kb-hide-checkbox');
@@ -279,7 +289,7 @@ function createBulkToolbar() {
 function sortCourseBoxes(customTitles) {
   const parents = new Set();
   document.querySelectorAll('.coursebox[data-courseid]').forEach(box => {
-    if (box.parentElement) parents.add(box.parentElement);
+    if (box.parentElement && !isInCategoryCombo(box)) parents.add(box.parentElement);
   });
 
   parents.forEach(parent => {
@@ -338,6 +348,8 @@ function processAllCourseBoxes(hiddenItems, customTitles, itemColors, hiddenImag
   boxes.forEach(box => {
     const id = box.dataset.courseid;
     if (!id) return;
+
+    if (isInCategoryCombo(box)) return;
 
     applyTitle(box, id, customTitles);
     applyColorStrip(box, itemColors[id] || null);
