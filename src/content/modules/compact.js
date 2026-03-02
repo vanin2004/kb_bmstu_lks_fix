@@ -65,10 +65,16 @@ function applyFooterVisibility(hide) {
   if (footer) footer.style.display = hide ? 'none' : '';
 }
 
+function applyBreadcrumbVisibility(hide) {
+  document.querySelectorAll('ol.breadcrumb').forEach(el => {
+    el.style.display = hide ? 'none' : '';
+  });
+}
+
 async function initCompactSettings() {
   const cfg = await adapter.getMultiple([
     'hideCourseCategoryCombo', 'hidePagingMoreLink', 'hideEnrolIcon', 'hideMainPageHeader',
-    'hideHeaderLogo', 'hideFooter',
+    'hideHeaderLogo', 'hideFooter', 'hideBreadcrumb',
   ]);
   applyCourseCategoryComboVisibility(!!cfg.hideCourseCategoryCombo);
   applyPagingMoreLinkVisibility(!!cfg.hidePagingMoreLink);
@@ -76,4 +82,5 @@ async function initCompactSettings() {
   applyMainPageHeaderVisibility(!!cfg.hideMainPageHeader);
   applyHeaderLogoVisibility(!!cfg.hideHeaderLogo);
   applyFooterVisibility(!!cfg.hideFooter);
+  applyBreadcrumbVisibility(!!cfg.hideBreadcrumb);
 }

@@ -64,6 +64,11 @@ extAPI.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       sendResponse && sendResponse({ ok: true });
       break;
 
+    case 'hideBreadcrumbChanged':
+      applyBreadcrumbVisibility(message.value);
+      sendResponse && sendResponse({ ok: true });
+      break;
+
     case 'replaceTabIconChanged':
       applyFaviconReplacement(message.value);
       sendResponse && sendResponse({ ok: true });
