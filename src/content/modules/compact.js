@@ -16,12 +16,26 @@ function applyCourseCategoryComboVisibility(hide) {
   const block = document.getElementById('frontpage-category-combo');
   if (!block) return;
   block.style.display = hide ? 'none' : '';
+  if (hide) {
+    document.querySelector('#skipcourses + br')?.remove();
+  } else {
+    const anchor = document.querySelector('#skipcourses');
+    if (anchor && !document.querySelector('#skipcourses + br'))
+      anchor.insertAdjacentElement('afterend', document.createElement('br'));
+  }
 }
 
 function applyPagingMoreLinkVisibility(hide) {
   document.querySelectorAll('.paging.paging-morelink').forEach(el => {
     el.style.display = hide ? 'none' : '';
   });
+  if (hide) {
+    document.querySelector('#skipmycourses + br')?.remove();
+  } else {
+    const anchor = document.querySelector('#skipmycourses');
+    if (anchor && !document.querySelector('#skipmycourses + br'))
+      anchor.insertAdjacentElement('afterend', document.createElement('br'));
+  }
 }
 
 function applyEnrolIconVisibility(hide) {
