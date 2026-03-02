@@ -556,3 +556,13 @@ html[data-theme="dark"] .kb-autologin-field label {
 .kb-course-grade:hover {
   text-decoration: none !important;
 }
+/* ── Значок оценки рядом с заданием на странице курса ───────────────────── */
+.kb-activity-grade {
+  float: right;
+  margin-left: 8px;
+  font-size: 11px;
+  text-decoration: none !important;
+}
+.kb-activity-grade:hover {
+  text-decoration: none !important;
+}

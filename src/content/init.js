@@ -41,6 +41,7 @@
   } else if (isCoursePage || isModPage) {
     await applyCustomTitleToHeading();
     await injectCourseInfoBlock();
+    if (isCoursePage) await initCourseGrades();
   }
 
   // Снять класс скрытия контента (гарантированно, включая страховой вариант)
