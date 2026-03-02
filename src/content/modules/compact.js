@@ -46,14 +46,20 @@ function applyHeaderLogoVisibility(hide) {
   if (drawerToggle) drawerToggle.style.display = hide ? 'none' : '';
 }
 
+function applyFooterVisibility(hide) {
+  const footer = document.getElementById('page-footer');
+  if (footer) footer.style.display = hide ? 'none' : '';
+}
+
 async function initCompactSettings() {
   const cfg = await adapter.getMultiple([
     'hideCourseCategoryCombo', 'hidePagingMoreLink', 'hideEnrolIcon', 'hideMainPageHeader',
-    'hideHeaderLogo',
+    'hideHeaderLogo', 'hideFooter',
   ]);
   applyCourseCategoryComboVisibility(!!cfg.hideCourseCategoryCombo);
   applyPagingMoreLinkVisibility(!!cfg.hidePagingMoreLink);
   applyEnrolIconVisibility(!!cfg.hideEnrolIcon);
   applyMainPageHeaderVisibility(!!cfg.hideMainPageHeader);
   applyHeaderLogoVisibility(!!cfg.hideHeaderLogo);
+  applyFooterVisibility(!!cfg.hideFooter);
 }

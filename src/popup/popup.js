@@ -27,6 +27,7 @@ const hidePagingMoreLinkCheckbox      = document.getElementById('hide-paging-mor
 const hideEnrolIconCheckbox           = document.getElementById('hide-enrol-icon-checkbox');
 const hideMainPageHeaderCheckbox      = document.getElementById('hide-main-page-header-checkbox');
 const hideHeaderLogoCheckbox          = document.getElementById('hide-header-logo-checkbox');
+const hideFooterCheckbox              = document.getElementById('hide-footer-checkbox');
 
 const featureSortAlphaCheckbox    = document.getElementById('feature-sort-alpha-checkbox');
 const featureAutoHideCheckbox     = document.getElementById('feature-auto-hide-checkbox');
@@ -279,6 +280,12 @@ hideHeaderLogoCheckbox.addEventListener('change', async () => {
   await sendToContentScript({ type: 'hideHeaderLogoChanged', value: hide });
 });
 
+hideFooterCheckbox.addEventListener('change', async () => {
+  const hide = hideFooterCheckbox.checked;
+  await adapter.set('hideFooter', hide);
+  await sendToContentScript({ type: 'hideFooterChanged', value: hide });
+});
+
 // ── Features ─────────────────────────────────────────────────────────────────
 featureSortAlphaCheckbox.addEventListener('change', async () => {
   const value = featureSortAlphaCheckbox.checked;
@@ -355,6 +362,7 @@ resetAllBtn.addEventListener('click', async () => {
     hideEnrolIcon:           false,
     hideMainPageHeader:      false,
     hideHeaderLogo:          false,
+    hideFooter:              false,
     featureSortAlpha:        false,
     featureAutoHide:         false,
     featureSwapOddEven:      false,
@@ -380,6 +388,7 @@ resetAllBtn.addEventListener('click', async () => {
   hideEnrolIconCheckbox.checked           = false;
   hideMainPageHeaderCheckbox.checked      = false;
   hideHeaderLogoCheckbox.checked          = false;
+  hideFooterCheckbox.checked              = false;
 
   featureSortAlphaCheckbox.checked        = false;
   featureAutoHideCheckbox.checked         = false;
@@ -409,7 +418,7 @@ async function loadSettings() {
     'editMode',
     'themeEnabled', 'theme', 'accent', 'tabIcon',
     'hideCourseCategoryCombo', 'hidePagingMoreLink', 'hideEnrolIcon', 'hideMainPageHeader',
-    'hideHeaderLogo',
+    'hideHeaderLogo', 'hideFooter',
     'featureSortAlpha', 'featureAutoHide', 'featureSwapOddEven', 'featureAutoFilename', 'featureGrades', 'featureNav',
     'studentLastname', 'studentFirstname', 'studentMiddlename', 'studentGroup', 'autoGroupRefresh',
     'autologinEnabled', 'autologinMode', 'autologinUsername', 'autologinPassword',
@@ -428,6 +437,7 @@ async function loadSettings() {
   hideEnrolIconCheckbox.checked           = cfg.hideEnrolIcon           ?? false;
   hideMainPageHeaderCheckbox.checked      = cfg.hideMainPageHeader      ?? false;
   hideHeaderLogoCheckbox.checked          = cfg.hideHeaderLogo          ?? false;
+  hideFooterCheckbox.checked              = cfg.hideFooter              ?? false;
 
   featureSortAlphaCheckbox.checked    = cfg.featureSortAlpha    ?? false;
   featureAutoHideCheckbox.checked     = cfg.featureAutoHide     ?? false;
