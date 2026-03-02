@@ -270,6 +270,15 @@ body {
 .popup-btn--muted:hover  { background: var(--popup-error); color: var(--popup-on-error); }
 .popup-btn--muted:active { filter: brightness(0.90); }
 
+.popup-btn--danger {
+  background: transparent;
+  color: var(--popup-error);
+  border: 1px solid color-mix(in srgb, var(--popup-error) 40%, transparent);
+  box-shadow: none;
+}
+.popup-btn--danger:hover  { background: color-mix(in srgb, var(--popup-error) 10%, transparent); }
+.popup-btn--danger:active { background: color-mix(in srgb, var(--popup-error) 20%, transparent); }
+
 /* ── Toggle switch ─────────────────────────────────────────────────────────── */
 .toggle-label {
   display: flex;

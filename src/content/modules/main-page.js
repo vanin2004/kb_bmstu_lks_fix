@@ -223,6 +223,21 @@ function createBulkToolbar() {
     });
   });
 
+  const resetHiddenBtn = document.createElement('button');
+  resetHiddenBtn.className = 'kb-btn kb-btn--muted';
+  resetHiddenBtn.textContent = '🗑️ Сбросить скрытие';
+  resetHiddenBtn.title = 'Показать все скрытые предметы';
+  resetHiddenBtn.addEventListener('click', () => {
+    const boxes = document.querySelectorAll('.coursebox[data-courseid]');
+    boxes.forEach(box => {
+      const id = box.dataset.courseid;
+      delete _editState.hiddenItems[id];
+      const chk = box.querySelector('.kb-hide-checkbox');
+      if (chk) chk.checked = false;
+      applyVisibility(box, id, _editState.hiddenItems);
+    });
+  });
+
   const invertBtn = document.createElement('button');
   invertBtn.className = 'kb-btn';
   invertBtn.textContent = 'Инвертировать';
@@ -255,6 +270,7 @@ function createBulkToolbar() {
   toolbar.appendChild(invertBtn);
   toolbar.appendChild(saveBtn);
   toolbar.appendChild(cancelBtn);
+  toolbar.appendChild(resetHiddenBtn);
   courseList.insertAdjacentElement('beforebegin', toolbar);
 }
 
@@ -415,8 +431,8 @@ async function initMainPage() {
   _editState.hiddenImages = cfg.hiddenImages || {};
   _editMode               = cfg.editMode     ?? false;
 
-  _features.sortAlpha   = cfg.featureSortAlpha   ?? true;
-  _features.swapOddEven = cfg.featureSwapOddEven ?? true;
+  _features.sortAlpha   = cfg.featureSortAlpha   ?? false;
+  _features.swapOddEven = cfg.featureSwapOddEven ?? false;
 
   if (_editMode) {
     document.body.classList.add('kb-edit-mode');

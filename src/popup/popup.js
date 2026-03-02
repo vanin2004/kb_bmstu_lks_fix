@@ -41,6 +41,7 @@ const autologinModeCredentialsRadio = document.getElementById('autologin-mode-cr
 const autologinModeAutofillRadio    = document.getElementById('autologin-mode-autofill');
 const autologinCredentialsSection   = document.getElementById('autologin-credentials-section');
 const autologinCredentialsWarning   = document.getElementById('autologin-credentials-warning');
+const resetAllBtn                   = document.getElementById('reset-all-btn');
 
 // ── Last-saved state per settings panel ─────────────────────────────────────
 // Populated on loadSettings; updated on Apply; used by Cancel to revert fields.
@@ -289,7 +290,57 @@ function updateAutologinCredentialsVisibility() {
 autologinModeCredentialsRadio.addEventListener('change', updateAutologinCredentialsVisibility);
 autologinModeAutofillRadio.addEventListener('change', updateAutologinCredentialsVisibility);
 
-// ── Load settings ─────────────────────────────────────────────────────────────
+// ── Reset all settings ─────────────────────────────────────────────────────────
+resetAllBtn.addEventListener('click', async () => {
+  if (!confirm('Сбросить все настройки до значений по умолчанию?')) return;
+
+  await adapter.saveAll({
+    themeEnabled:            false,
+    theme:                   'system',
+    accent:                  'violet',
+    hideCourseCategoryCombo: false,
+    hidePagingMoreLink:      false,
+    hideEnrolIcon:           false,
+    hideMainPageHeader:      false,
+    featureSortAlpha:        false,
+    featureSwapOddEven:      false,
+    featureAutoFilename:     false,
+    autologinEnabled:        false,
+    autologinMode:           'credentials',
+  });
+  await adapter.remove(['autologinUsername', 'autologinPassword']);
+
+  // Обновить UI
+  themeEnabledCheckbox.checked            = false;
+  themeSelect.value                       = 'system';
+  accentSelect.value                      = 'violet';
+  applyPopupTheme(false, 'system', 'violet');
+  saved['theme-panel']                    = { theme: 'system', accent: 'violet' };
+
+  hideCourseCategoryComboCheckbox.checked = false;
+  hidePagingMoreLinkCheckbox.checked      = false;
+  hideEnrolIconCheckbox.checked           = false;
+  hideMainPageHeaderCheckbox.checked      = false;
+
+  featureSortAlphaCheckbox.checked        = false;
+  featureSwapOddEvenCheckbox.checked      = false;
+  featureAutoFilenameCheckbox.checked     = false;
+
+  autologinEnabledCheckbox.checked        = false;
+  autologinUsernameInput.value            = '';
+  autologinPasswordInput.value            = '';
+  autologinModeCredentialsRadio.checked   = true;
+  autologinModeAutofillRadio.checked      = false;
+  saved['autologin-panel'] = { autologinMode: 'credentials', autologinUsername: '', autologinPassword: '' };
+
+  setPanelOpen('theme-panel', false);
+  setPanelOpen('student-info-panel', false);
+  setPanelOpen('autologin-panel', false);
+  updateAutologinCredentialsVisibility();
+
+  await sendToContentScript({ type: 'resetAllSettings' });
+});
+//  ─────────────────────────────────────────────────────────────
 async function loadSettings() {
   const cfg = await adapter.getMultiple([
     'editMode',
@@ -312,8 +363,8 @@ async function loadSettings() {
   hideEnrolIconCheckbox.checked           = cfg.hideEnrolIcon           ?? false;
   hideMainPageHeaderCheckbox.checked      = cfg.hideMainPageHeader      ?? false;
 
-  featureSortAlphaCheckbox.checked    = cfg.featureSortAlpha    ?? true;
-  featureSwapOddEvenCheckbox.checked  = cfg.featureSwapOddEven  ?? true;
+  featureSortAlphaCheckbox.checked    = cfg.featureSortAlpha    ?? false;
+  featureSwapOddEvenCheckbox.checked  = cfg.featureSwapOddEven  ?? false;
   featureAutoFilenameCheckbox.checked = cfg.featureAutoFilename ?? false;
 
   studentLastnameInput.value   = cfg.studentLastname   ?? '';

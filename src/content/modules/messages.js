@@ -73,6 +73,22 @@ extAPI.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       sendResponse && sendResponse({ ok: true });
       break;
 
+    case 'resetAllSettings':
+      applyTheme(false, 'system', 'violet');
+      applyCourseCategoryComboVisibility(false);
+      applyPagingMoreLinkVisibility(false);
+      applyEnrolIconVisibility(false);
+      applyMainPageHeaderVisibility(false);
+      _features.sortAlpha   = false;
+      _features.swapOddEven = false;
+      if (isMainPage) {
+        processAllCourseBoxes(_editState.hiddenItems, _editState.customTitles, _editState.itemColors);
+      }
+      stopAutoFilenameObserver();
+      _featureAutoFilename = false;
+      sendResponse && sendResponse({ ok: true });
+      break;
+
     case 'studentInfoChanged': {
       const keyMap = {
         studentLastname:   'lastname',
