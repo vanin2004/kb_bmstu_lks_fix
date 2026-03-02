@@ -229,6 +229,28 @@ async function fillCourseSemesters(entries) {
   }
 
   await solve(0, sorted.length - 1, null, null);
+
+  // ── 3. Предметы с неопределённым семестром ────────────────────────────────
+  // Если у курса семестр не удалось определить (null), ищем ближайший
+  // следующий курс (по возрастанию ID) с известным семестром.
+  // Если найденный семестр уже завершён (его код < текущего), приписываем
+  // неопределённый курс к этому семестру.
+  const currentOrd = currentSemesterOrd();
+  if (currentOrd !== null) {
+    for (let i = 0; i < sorted.length; i++) {
+      const { id } = sorted[i];
+      if (cache.get(id) !== null) continue;
+
+      for (let j = i + 1; j < sorted.length; j++) {
+        const nextOrd = cache.get(sorted[j].id);
+        if (nextOrd !== null && nextOrd !== undefined) {
+          if (nextOrd < currentOrd) cache.set(id, nextOrd);
+          break;
+        }
+      }
+    }
+  }
+
   return cache;
 }
 
