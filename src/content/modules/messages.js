@@ -54,6 +54,11 @@ extAPI.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       sendResponse && sendResponse({ ok: true });
       break;
 
+    case 'hideHeaderLogoChanged':
+      applyHeaderLogoVisibility(message.value);
+      sendResponse && sendResponse({ ok: true });
+      break;
+
     case 'featuresChanged':
       if (message.features.sortAlpha   !== undefined) _features.sortAlpha   = message.features.sortAlpha;
       if (message.features.swapOddEven !== undefined) _features.swapOddEven = message.features.swapOddEven;
@@ -79,6 +84,7 @@ extAPI.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       applyPagingMoreLinkVisibility(false);
       applyEnrolIconVisibility(false);
       applyMainPageHeaderVisibility(false);
+      applyHeaderLogoVisibility(false);
       _features.sortAlpha   = false;
       _features.swapOddEven = false;
       if (isMainPage) {

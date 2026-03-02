@@ -36,12 +36,24 @@ function applyMainPageHeaderVisibility(hide) {
   if (header) header.style.display = hide ? 'none' : '';
 }
 
+function applyHeaderLogoVisibility(hide) {
+  document.querySelectorAll('img.buttonlogo').forEach(el => {
+    el.style.display = hide ? 'none' : '';
+  });
+  const drawer = document.getElementById('nav-drawer');
+  if (drawer) drawer.style.display = hide ? 'none' : '';
+  const drawerToggle = document.querySelector('[data-region="drawer-toggle"]');
+  if (drawerToggle) drawerToggle.style.display = hide ? 'none' : '';
+}
+
 async function initCompactSettings() {
   const cfg = await adapter.getMultiple([
     'hideCourseCategoryCombo', 'hidePagingMoreLink', 'hideEnrolIcon', 'hideMainPageHeader',
+    'hideHeaderLogo',
   ]);
   applyCourseCategoryComboVisibility(!!cfg.hideCourseCategoryCombo);
   applyPagingMoreLinkVisibility(!!cfg.hidePagingMoreLink);
   applyEnrolIconVisibility(!!cfg.hideEnrolIcon);
   applyMainPageHeaderVisibility(!!cfg.hideMainPageHeader);
+  applyHeaderLogoVisibility(!!cfg.hideHeaderLogo);
 }
