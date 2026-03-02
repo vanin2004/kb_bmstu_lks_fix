@@ -29,6 +29,7 @@ const hideMainPageHeaderCheckbox      = document.getElementById('hide-main-page-
 const hideHeaderLogoCheckbox          = document.getElementById('hide-header-logo-checkbox');
 
 const featureSortAlphaCheckbox    = document.getElementById('feature-sort-alpha-checkbox');
+const featureAutoHideCheckbox     = document.getElementById('feature-auto-hide-checkbox');
 const featureSwapOddEvenCheckbox  = document.getElementById('feature-swap-odd-even-checkbox');
 const featureAutoFilenameCheckbox = document.getElementById('feature-auto-filename-checkbox');
 const featureGradesCheckbox       = document.getElementById('feature-grades-checkbox');
@@ -285,6 +286,11 @@ featureSortAlphaCheckbox.addEventListener('change', async () => {
   await sendToContentScript({ type: 'featuresChanged', features: { sortAlpha: value } });
 });
 
+featureAutoHideCheckbox.addEventListener('change', async () => {
+  const value = featureAutoHideCheckbox.checked;
+  await adapter.set('featureAutoHide', value);
+});
+
 featureSwapOddEvenCheckbox.addEventListener('change', async () => {
   const value = featureSwapOddEvenCheckbox.checked;
   await adapter.set('featureSwapOddEven', value);
@@ -350,6 +356,7 @@ resetAllBtn.addEventListener('click', async () => {
     hideMainPageHeader:      false,
     hideHeaderLogo:          false,
     featureSortAlpha:        false,
+    featureAutoHide:         false,
     featureSwapOddEven:      false,
     featureAutoFilename:     false,
     featureGrades:           false,
@@ -375,6 +382,7 @@ resetAllBtn.addEventListener('click', async () => {
   hideHeaderLogoCheckbox.checked          = false;
 
   featureSortAlphaCheckbox.checked        = false;
+  featureAutoHideCheckbox.checked         = false;
   featureSwapOddEvenCheckbox.checked      = false;
   featureAutoFilenameCheckbox.checked     = false;
   featureGradesCheckbox.checked           = false;
@@ -402,7 +410,7 @@ async function loadSettings() {
     'themeEnabled', 'theme', 'accent', 'tabIcon',
     'hideCourseCategoryCombo', 'hidePagingMoreLink', 'hideEnrolIcon', 'hideMainPageHeader',
     'hideHeaderLogo',
-    'featureSortAlpha', 'featureSwapOddEven', 'featureAutoFilename', 'featureGrades', 'featureNav',
+    'featureSortAlpha', 'featureAutoHide', 'featureSwapOddEven', 'featureAutoFilename', 'featureGrades', 'featureNav',
     'studentLastname', 'studentFirstname', 'studentMiddlename', 'studentGroup', 'autoGroupRefresh',
     'autologinEnabled', 'autologinMode', 'autologinUsername', 'autologinPassword',
   ]);
@@ -422,6 +430,7 @@ async function loadSettings() {
   hideHeaderLogoCheckbox.checked          = cfg.hideHeaderLogo          ?? false;
 
   featureSortAlphaCheckbox.checked    = cfg.featureSortAlpha    ?? false;
+  featureAutoHideCheckbox.checked     = cfg.featureAutoHide     ?? false;
   featureSwapOddEvenCheckbox.checked  = cfg.featureSwapOddEven  ?? false;
   featureAutoFilenameCheckbox.checked = cfg.featureAutoFilename ?? false;
   featureGradesCheckbox.checked       = cfg.featureGrades       ?? false;

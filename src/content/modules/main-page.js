@@ -10,6 +10,10 @@
  */
 'use strict';
 
+// Кэш результатов определения семестра: id → объект { semester, year, date } | null
+// Живёт в памяти; сбрасывается при перезагрузке страницы
+let _semesterCache = {};
+
 // ── Применить стили к одной карточке ─────────────────────────────────────────
 
 function applyColorStrip(box, color) {
@@ -197,6 +201,19 @@ function createEditPanel(box, courseId) {
     panel.appendChild(hideImgBtn);
   }
 
+  // --- Бейдж семестра — берётся из кэша (заполняется из storage при старте)
+  const semesterBadge = document.createElement('div');
+  semesterBadge.className = 'kb-semester-badge kb-semester-badge--loaded';
+  const cachedSem = _semesterCache[courseId];
+  const displayStr = ordinalToDisplay(cachedSem);
+  if (displayStr) {
+    semesterBadge.textContent = displayStr;
+  } else {
+    semesterBadge.textContent = '—';
+    semesterBadge.classList.add('kb-semester-badge--unknown');
+  }
+  panel.appendChild(semesterBadge);
+
   box.appendChild(panel);
 }
 
@@ -276,11 +293,71 @@ function createBulkToolbar() {
     await cancelEditMode();
   });
 
+  const hideOldBtn = document.createElement('button');
+  hideOldBtn.className = 'kb-btn kb-btn--semester';
+  hideOldBtn.textContent = '🕰 Скрыть устаревшие';
+  hideOldBtn.title = 'Определить семестры и скрыть предметы старее текущего';
+  hideOldBtn.addEventListener('click', async () => {
+    hideOldBtn.disabled = true;
+    hideOldBtn.textContent = '⏳ Загрузка…';
+
+    // ── 1. Рассчитать семестры для всех карточек ──────────────────────────
+    const boxes = Array.from(document.querySelectorAll('.coursebox[data-courseid]'))
+      .filter(box => !isInCategoryCombo(box));
+
+    const entries = boxes.map(box => ({
+      id:   box.dataset.courseid,
+      info: _semesterCache[box.dataset.courseid] ?? null,
+    }));
+
+    const result = await fillCourseSemesters(entries);
+
+    // Обновить in-memory кэш и storage (не трогая autoHideLastRun)
+    result.forEach((info, id) => { _semesterCache[id] = info; });
+    const semMap = (await adapter.get('courseSemesters')) || {};
+    result.forEach((info, id) => { if (info) semMap[id] = info; });
+    await adapter.set('courseSemesters', semMap);
+
+    // Обновить бейджи семестра на панелях редактирования
+    boxes.forEach(box => {
+      const badge = box.querySelector('.kb-semester-badge');
+      if (!badge) return;
+      const displayStr = ordinalToDisplay(_semesterCache[box.dataset.courseid]);
+      if (displayStr) {
+        badge.textContent = displayStr;
+        badge.classList.remove('kb-semester-badge--unknown');
+      } else {
+        badge.textContent = '—';
+        badge.classList.add('kb-semester-badge--unknown');
+      }
+    });
+
+    // ── 2. Скрыть предметы старее текущего семестра ───────────────────────
+    const currentOrd = currentSemesterOrd();
+
+    if (currentOrd !== null) {
+      boxes.forEach(box => {
+        const id  = box.dataset.courseid;
+        const ord = _semesterCache[id]; // уже числовой код
+        if (typeof ord === 'number' && ord < currentOrd && !_editState.hiddenItems[id]) {
+          _editState.hiddenItems[id] = true;
+          const chk = box.querySelector('.kb-hide-checkbox');
+          if (chk) chk.checked = true;
+          applyVisibility(box, id, _editState.hiddenItems);
+        }
+      });
+    }
+
+    hideOldBtn.disabled = false;
+    hideOldBtn.textContent = '🕰 Скрыть устаревшие';
+  });
+
   toolbar.appendChild(selectAllBtn);
   toolbar.appendChild(invertBtn);
   toolbar.appendChild(saveBtn);
   toolbar.appendChild(cancelBtn);
   toolbar.appendChild(resetHiddenBtn);
+  toolbar.appendChild(hideOldBtn);
   courseList.insertAdjacentElement('beforebegin', toolbar);
 }
 
@@ -434,17 +511,37 @@ async function cancelEditMode() {
 async function initMainPage() {
   const cfg = await adapter.getMultiple([
     'editMode', 'hiddenItems', 'customTitles', 'itemColors', 'hiddenImages',
-    'featureSortAlpha', 'featureSwapOddEven',
+    'featureSortAlpha', 'featureSwapOddEven', 'courseSemesters', 'featureAutoHide',
   ]);
 
-  _editState.hiddenItems  = cfg.hiddenItems  || {};
-  _editState.customTitles = cfg.customTitles || {};
-  _editState.itemColors   = cfg.itemColors   || {};
-  _editState.hiddenImages = cfg.hiddenImages || {};
+  _editState.hiddenItems  = Object.assign({}, cfg.hiddenItems  || {});
+  _editState.customTitles = Object.assign({}, cfg.customTitles || {});
+  _editState.itemColors   = Object.assign({}, cfg.itemColors   || {});
+  _editState.hiddenImages = Object.assign({}, cfg.hiddenImages || {});
   _editMode               = cfg.editMode     ?? false;
 
   _features.sortAlpha   = cfg.featureSortAlpha   ?? false;
   _features.swapOddEven = cfg.featureSwapOddEven ?? false;
+
+  // Заполнить in-memory кэш семестров из storage.
+  // Конвертируем старые объекты { semester, year } → числовой код на лету,
+  // чтобы в памяти всегда хранился компактный формат (251, 252 …).
+  _semesterCache = {};
+  for (const [id, val] of Object.entries(cfg.courseSemesters || {})) {
+    _semesterCache[id] = typeof val === 'number' ? val : semesterToOrdinal(val);
+  }
+  // Захардкоженные ID перекрывают всё остальное
+  for (const [id, ord] of Object.entries(_HARDCODED_SEMESTERS)) {
+    _semesterCache[id] = ord;
+  }
+
+  // Авто-скрытие устаревших предметов:
+  // запускается один раз за период (первый вход после 1 февраля / 1 июля)
+  if (cfg.featureAutoHide ?? false) {
+    await checkAndHideOldCourses(_editState.hiddenItems, async (updated) => {
+      await adapter.set('hiddenItems', updated);
+    });
+  }
 
   if (_editMode) {
     document.body.classList.add('kb-edit-mode');

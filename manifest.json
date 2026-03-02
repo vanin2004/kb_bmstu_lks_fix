@@ -51,10 +51,12 @@
         "src/content/modules/course-page.js",
         "src/content/modules/main-page.js",
         "src/content/modules/grades.js",
+        "src/content/modules/semester.js",
         "src/content/modules/auto-filename.js",
         "src/content/modules/autologin.js",
         "src/content/modules/nav.js",
         "src/content/modules/messages.js",
+        "src/content/modules/assign-page.js",
         "src/content/init.js"
       ],
       "css": [

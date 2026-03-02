@@ -45,6 +45,7 @@
     await applyCustomTitleToHeading();
     await injectCourseInfoBlock();
     if (isCoursePage) await initCourseGrades();
+    if (isModPage)    await initAssignPage();
   }
 
   // Снять класс скрытия контента (гарантированно, включая страховой вариант)

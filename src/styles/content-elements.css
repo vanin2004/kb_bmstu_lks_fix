@@ -262,6 +262,40 @@ body.kb-edit-mode .coursebox.kb-hidden-item::after {
   border-color: #ffcc80;
 }
 
+/* ── Кнопка «Семестры» в панели массовых операций ────────────────────────── */
+.kb-btn--semester {
+  background: #00796b;
+}
+.kb-btn--semester:hover  { background: #00695c; box-shadow: 0 2px 6px rgba(0,0,0,0.22); }
+.kb-btn--semester:active { background: #004d40; }
+.kb-btn--semester:disabled {
+  background: #b2dfdb;
+  color: #fff;
+  cursor: wait;
+  box-shadow: none;
+}
+
+/* ── Бейдж семестра в панели редактирования карточки ─────────────────────── */
+.kb-semester-badge {
+  display: inline-block;
+  align-self: flex-start;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  padding: 2px 9px;
+  border-radius: 10px;
+  background: rgba(0, 121, 107, 0.1);
+  color: #00695c;
+  border: 1px solid rgba(0, 121, 107, 0.3);
+}
+
+.kb-semester-badge--unknown {
+  background: transparent;
+  color: #bbb;
+  border-color: #ddd;
+  font-weight: 400;
+}
+
 /* ── Панель автозаполнения имени файла (инъекция в .fp-upload-form) ────────── */
 .kb-autoname-panel {
   margin-bottom: 8px;
