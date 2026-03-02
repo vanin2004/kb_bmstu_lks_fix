@@ -37,6 +37,7 @@
 
   if (isMainPage) {
     await initMainPage();
+    await initGrades();
   } else if (isCoursePage || isModPage) {
     await applyCustomTitleToHeading();
     await injectCourseInfoBlock();

@@ -38,17 +38,19 @@ async function injectCourseInfoBlock() {
   const courseId = getCurrentCourseId();
   if (!courseId) return;
 
-  const cfg = await adapter.getMultiple(['customTitles', 'itemColors', 'courseTeachers']);
+  const cfg = await adapter.getMultiple(['customTitles', 'itemColors', 'courseTeachers', 'featureGrades', 'courseGrades']);
   const customTitles   = cfg.customTitles   || {};
   const itemColors     = cfg.itemColors     || {};
   const courseTeachers = cfg.courseTeachers || {};
+  const courseGrades   = (cfg.featureGrades && cfg.courseGrades) ? cfg.courseGrades : {};
 
   const customTitle = customTitles[courseId]   || null;
   const color       = itemColors[courseId]     || null;
   const teachers    = courseTeachers[courseId] || [];
+  const gradeInfo   = courseGrades[courseId]   || null;
 
   // Не вставляем, если нечего показывать
-  if (!customTitle && !color && teachers.length === 0) return;
+  if (!customTitle && !color && teachers.length === 0 && !gradeInfo) return;
 
   const cardBody = document.querySelector('#page-header .card-body');
   if (!cardBody) return;
@@ -76,6 +78,18 @@ async function injectCourseInfoBlock() {
     teacherEl.className = 'kb-course-teachers';
     teacherEl.textContent = teachers.join(', ');
     block.appendChild(teacherEl);
+  }
+
+  if (gradeInfo) {
+    const gradeText = gradeInfo.grade && gradeInfo.grade !== '-' ? gradeInfo.grade : '—';
+    const gradeEl = document.createElement('a');
+    gradeEl.className = 'badge badge-secondary kb-course-grade';
+    gradeEl.href      = gradeInfo.gradeUrl;
+    gradeEl.target    = '_blank';
+    gradeEl.rel       = 'noopener noreferrer';
+    gradeEl.title     = 'Отчёт об оценках по предмету';
+    gradeEl.textContent = `Оценка: ${gradeText}`;
+    block.appendChild(gradeEl);
   }
 
   cardBody.appendChild(block);

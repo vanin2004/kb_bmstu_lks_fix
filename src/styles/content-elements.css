@@ -534,3 +534,25 @@ html[data-theme="dark"] .kb-autologin-field label {
     color: #9e9e9e;
   }
 }
+
+/* ── Значок оценки на карточке курса (главная страница) ────────────────── */
+.kb-grade-badge {
+  float: right;
+  margin-left: 8px;
+  font-size: 11px;
+  text-decoration: none !important;
+}
+.kb-grade-badge:hover {
+  text-decoration: none !important;
+}
+
+/* ── Значок оценки на странице предмета ────────────────────────────────── */
+.kb-course-grade {
+  display: inline-block;
+  margin-top: 4px;
+  text-decoration: none !important;
+  font-size: 12px;
+}
+.kb-course-grade:hover {
+  text-decoration: none !important;
+}

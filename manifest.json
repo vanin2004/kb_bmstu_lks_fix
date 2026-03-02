@@ -50,6 +50,7 @@
         "src/content/modules/compact.js",
         "src/content/modules/course-page.js",
         "src/content/modules/main-page.js",
+        "src/content/modules/grades.js",
         "src/content/modules/auto-filename.js",
         "src/content/modules/autologin.js",
         "src/content/modules/messages.js",
