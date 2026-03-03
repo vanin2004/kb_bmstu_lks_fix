@@ -67,9 +67,11 @@ async function injectCourseInfoBlock() {
   }
 
   if (customTitle) {
+    const h1 = document.querySelector('#page-header .page-header-headings h1');
+    const origTitle = h1?.dataset.kbOriginal || null;
     const title = document.createElement('div');
     title.className = 'kb-course-custom-title';
-    title.textContent = customTitle;
+    title.textContent = origTitle || customTitle;
     block.appendChild(title);
   }
 
