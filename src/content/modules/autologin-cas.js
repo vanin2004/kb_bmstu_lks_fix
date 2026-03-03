@@ -1,14 +1,13 @@
 /**
  * autologin-cas.js — автозаполнение формы входа на CAS
  *
- * Запускается в скрытой фоновой вкладке, открытой background.js.
- * Вкладка невидима пользователю — скрывать страницу не нужно.
+ * Запускается при открытии страницы CAS в результате перенаправления
+ * из autologin.js. Ждёт автозаполнения браузером и отправляет форму.
  *
  * Логика:
- *   1. Если на странице есть .alert-danger — передаём сообщение об ошибке
- *      в background.js и выходим. (При POST-отправке фрагмент URL теряется,
- *      поэтому проверка ошибки идёт до проверки хэша.)
- *   2. Если ошибки нет и URL содержит #kb_autologin — заполняем форму.
+ *   1. Если на странице есть .alert-danger — выходим (ошибка аутентификации).
+ *   2. Если URL содержит #kb_autologin — ждём автозаполнения браузером
+ *      и отправляем форму.
  */
 
 /**
@@ -39,16 +38,6 @@ function waitForAutofill(field, timeoutMs = 3000) {
       if (Date.now() > deadline) { done(false); }
     }, 50);
   });
-}
-
-/**
- * Устанавливает значение поля и диспатчит события input/change,
- * чтобы нативный JavaScript CAS-страницы увидел изменение и разблокировал кнопку отправки.
- */
-function setFieldValue(field, value) {
-  field.value = value;
-  field.dispatchEvent(new Event('input',  { bubbles: true }));
-  field.dispatchEvent(new Event('change', { bubbles: true }));
 }
 
 /**
@@ -109,51 +98,27 @@ async function submitCasForm(form) {
   // Проверяем ошибку аутентификации в первую очередь.
   // При неверных учётных данных CAS возвращает 200 с той же страницей,
   // фрагмент URL при этом теряется — поэтому проверка до проверки хэша.
-  const alertEl = document.querySelector('.alert.alert-danger');
-  if (alertEl) {
-    const message = alertEl.querySelector('span')?.textContent?.trim() || 'Неверный логин или пароль';
-    extAPI.runtime.sendMessage({ type: 'autologin_cas_error', message }).catch(() => {});
-    return;
-  }
+  // Если есть ошибка аутентификации — выходим
+  if (document.querySelector('.alert.alert-danger')) return;
 
   // Заполняем форму только на первоначальной загрузке (есть фрагмент)
   if (window.location.hash !== '#kb_autologin') return;
 
   let cfg;
   try {
-    cfg = await extAPI.storage.local.get(['autologinEnabled', 'autologinMode', 'autologinUsername', 'autologinPassword']);
+    cfg = await extAPI.storage.local.get(['autologinEnabled']);
   } catch {
     return;
   }
 
   if (!cfg.autologinEnabled) return;
 
-  const mode = cfg.autologinMode ?? 'credentials';
-
-  if (mode === 'autofill') {
-    const passwordField = document.querySelector('input[name="password"]');
-    if (!passwordField) return;
-    const filled = await waitForAutofill(passwordField, 3000);
-    if (!filled) return; // браузер не заполнил — не отправляем пустую форму
-    const form = passwordField.closest('form');
-    if (!form) return;
-    await submitCasForm(form);
-    return;
-  }
-
-  // Режим credentials: заполняем форму из хранилища расширения
-  if (!cfg.autologinUsername || !cfg.autologinPassword) return;
-
-  const usernameField = document.querySelector('input[name="username"]');
+  // Ждём автозаполнения браузером и отправляем форму
   const passwordField = document.querySelector('input[name="password"]');
-  if (!usernameField || !passwordField) return;
-
-  // setFieldValue ставит value и диспатчит input/change чтобы CAS JS разблокировал кнопку
-  setFieldValue(usernameField, cfg.autologinUsername);
-  setFieldValue(passwordField, cfg.autologinPassword);
-
-  const form = usernameField.closest('form');
+  if (!passwordField) return;
+  const filled = await waitForAutofill(passwordField, 3000);
+  if (!filled) return; // браузер не заполнил — не отправляем пустую форму
+  const form = passwordField.closest('form');
   if (!form) return;
-
   await submitCasForm(form);
 })();

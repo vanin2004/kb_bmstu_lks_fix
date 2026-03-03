@@ -44,12 +44,6 @@ const studentMiddlenameInput = document.getElementById('student-middlename-input
 const studentGroupInput      = document.getElementById('student-group-input');
 const autoGroupRefreshCheckbox = document.getElementById('auto-group-refresh-checkbox');
 
-const autologinUsernameInput        = document.getElementById('autologin-username-input');
-const autologinPasswordInput        = document.getElementById('autologin-password-input');
-const autologinModeCredentialsRadio = document.getElementById('autologin-mode-credentials');
-const autologinModeAutofillRadio    = document.getElementById('autologin-mode-autofill');
-const autologinCredentialsSection   = document.getElementById('autologin-credentials-section');
-const autologinCredentialsWarning   = document.getElementById('autologin-credentials-warning');
 const resetAllBtn                   = document.getElementById('reset-all-btn');
 
 // ── Last-saved state per settings panel ─────────────────────────────────────
@@ -57,7 +51,6 @@ const resetAllBtn                   = document.getElementById('reset-all-btn');
 const saved = {
   'theme-panel':        { theme: 'system', accent: 'violet', replaceTabIcon: 'original' },
   'student-info-panel': { studentLastname: '', studentFirstname: '', studentMiddlename: '', studentGroup: '', autoGroupRefresh: false },
-  'autologin-panel':    { autologinMode: 'credentials', autologinUsername: '', autologinPassword: '' },
 };
 
 // ── Utilities ────────────────────────────────────────────────────────────────
@@ -146,18 +139,6 @@ const applyHandlers = {
     }
     setPanelOpen('student-info-panel', false);
   },
-
-  'autologin-panel': async () => {
-    const autologinMode = autologinModeAutofillRadio.checked ? 'autofill' : 'credentials';
-    const data = {
-      autologinMode,
-      autologinUsername: autologinUsernameInput.value,
-      autologinPassword: autologinPasswordInput.value,
-    };
-    await adapter.saveAll(data);
-    saved['autologin-panel'] = { ...data };
-    setPanelOpen('autologin-panel', false);
-  },
 };
 
 // ── Cancel: revert fields to last saved state then close ─────────────────────
@@ -179,16 +160,6 @@ const cancelHandlers = {
     studentGroupInput.value      = s.studentGroup;
     autoGroupRefreshCheckbox.checked = s.autoGroupRefresh ?? false;
     setPanelOpen('student-info-panel', false);
-  },
-
-  'autologin-panel': () => {
-    const s = saved['autologin-panel'];
-    autologinModeCredentialsRadio.checked = s.autologinMode !== 'autofill';
-    autologinModeAutofillRadio.checked    = s.autologinMode === 'autofill';
-    autologinUsernameInput.value = s.autologinUsername;
-    autologinPasswordInput.value = s.autologinPassword;
-    updateAutologinCredentialsVisibility();
-    setPanelOpen('autologin-panel', false);
   },
 };
 
@@ -331,29 +302,8 @@ featureNavCheckbox.addEventListener('change', async () => {
 });
 
 autologinEnabledCheckbox.addEventListener('change', async () => {
-  const value = autologinEnabledCheckbox.checked;
-  await adapter.set('autologinEnabled', value);
-  if (value) {
-    if (!isPanelOpen('autologin-panel')) setPanelOpen('autologin-panel', true);
-  } else {
-    // Удаляем учётные данные из хранилища при отключении автовхода
-    await adapter.remove(['autologinUsername', 'autologinPassword']);
-    autologinUsernameInput.value = '';
-    autologinPasswordInput.value = '';
-    saved['autologin-panel'] = { ...saved['autologin-panel'], autologinUsername: '', autologinPassword: '' };
-  }
+  await adapter.set('autologinEnabled', autologinEnabledCheckbox.checked);
 });
-
-// ── Autologin: переключение видимости блока с учётными данными ───────────────
-function updateAutologinCredentialsVisibility() {
-  const isCredentials = autologinModeCredentialsRadio.checked;
-  autologinCredentialsSection.style.display = isCredentials ? '' : 'none';
-  if (autologinCredentialsWarning)
-    autologinCredentialsWarning.style.display = isCredentials ? '' : 'none';
-}
-
-autologinModeCredentialsRadio.addEventListener('change', updateAutologinCredentialsVisibility);
-autologinModeAutofillRadio.addEventListener('change', updateAutologinCredentialsVisibility);
 
 // ── Reset all settings ─────────────────────────────────────────────────────────
 resetAllBtn.addEventListener('click', async () => {
@@ -378,10 +328,8 @@ resetAllBtn.addEventListener('click', async () => {
     featureGrades:           false,
     featureNav:              false,
     autologinEnabled:        false,
-    autologinMode:           'credentials',
     autoGroupRefresh:        false,
   });
-  await adapter.remove(['autologinUsername', 'autologinPassword']);
 
   // Обновить UI
   themeEnabledCheckbox.checked            = false;
@@ -408,16 +356,9 @@ resetAllBtn.addEventListener('click', async () => {
   autoGroupRefreshCheckbox.checked        = false;
 
   autologinEnabledCheckbox.checked        = false;
-  autologinUsernameInput.value            = '';
-  autologinPasswordInput.value            = '';
-  autologinModeCredentialsRadio.checked   = true;
-  autologinModeAutofillRadio.checked      = false;
-  saved['autologin-panel'] = { autologinMode: 'credentials', autologinUsername: '', autologinPassword: '' };
 
   setPanelOpen('theme-panel', false);
   setPanelOpen('student-info-panel', false);
-  setPanelOpen('autologin-panel', false);
-  updateAutologinCredentialsVisibility();
 
   await sendToContentScript({ type: 'resetAllSettings' });
 });
@@ -430,7 +371,7 @@ async function loadSettings() {
     'hideHeaderLogo', 'hideFooter', 'hideBreadcrumb',
     'featureSortAlpha', 'featureAutoHide', 'featureSwapOddEven', 'featureAutoFilename', 'featureGrades', 'featureNav',
     'studentLastname', 'studentFirstname', 'studentMiddlename', 'studentGroup', 'autoGroupRefresh',
-    'autologinEnabled', 'autologinMode', 'autologinUsername', 'autologinPassword',
+    'autologinEnabled',
   ]);
 
   setEditModeButtons(cfg.editMode ?? false);
@@ -470,17 +411,6 @@ async function loadSettings() {
   };
 
   autologinEnabledCheckbox.checked = cfg.autologinEnabled ?? false;
-  const autologinMode = cfg.autologinMode ?? 'credentials';
-  autologinModeCredentialsRadio.checked = autologinMode !== 'autofill';
-  autologinModeAutofillRadio.checked    = autologinMode === 'autofill';
-  autologinUsernameInput.value     = cfg.autologinUsername ?? '';
-  autologinPasswordInput.value     = cfg.autologinPassword ?? '';
-  saved['autologin-panel'] = {
-    autologinMode,
-    autologinUsername: autologinUsernameInput.value,
-    autologinPassword: autologinPasswordInput.value,
-  };
-  updateAutologinCredentialsVisibility();
 
   applyPopupTheme(
     cfg.themeEnabled ?? false,
