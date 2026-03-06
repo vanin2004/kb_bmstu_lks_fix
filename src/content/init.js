@@ -44,6 +44,7 @@
   } else if (isCoursePage || isModPage) {
     await applyCustomTitleToHeading();
     await injectCourseInfoBlock();
+    initCourseHeadingLink();
     if (isCoursePage) await initCourseGrades();
     if (isModPage)    await initAssignPage();
   }

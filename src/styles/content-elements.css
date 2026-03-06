@@ -367,6 +367,24 @@ body.kb-edit-mode .coursebox.kb-hidden-item::after {
   color: #666;
 }
 
+/* ── Кликабельный заголовок курса ─────────────────────────────────────────── */
+.kb-heading-link {
+  cursor: pointer;
+  transition: color 0.15s, opacity 0.15s;
+}
+
+.kb-heading-link:hover {
+  color: var(--md-sys-color-primary, #694fa3);
+  text-decoration: underline;
+  opacity: 0.85;
+}
+
+.kb-heading-link:focus-visible {
+  outline: 2px solid var(--md-sys-color-primary, #694fa3);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
 /* ── Тёмная тема для элементов расширения ─────────────────────────────────── */
 @media (prefers-color-scheme: dark) {
   html[data-theme="system"],
@@ -419,6 +437,11 @@ body.kb-edit-mode .coursebox.kb-hidden-item::after {
 
     & .kb-course-teachers {
       color: #9e9e9e;
+    }
+
+    /* Кликабельный заголовок */
+    & .kb-heading-link:hover {
+      color: #9fa8da;
     }
 
     /* Кнопки */
@@ -475,6 +498,10 @@ html[data-theme="dark"] {
 
   .kb-course-teachers {
     color: #9e9e9e;
+  }
+
+  .kb-heading-link:hover {
+    color: #9fa8da;
   }
 }
 

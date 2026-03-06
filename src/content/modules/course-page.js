@@ -94,3 +94,31 @@ async function injectCourseInfoBlock() {
 
   cardBody.appendChild(block);
 }
+
+// ── Сделать заголовок страницы курса/модуля кликабельным (→ страница курса) ──
+function initCourseHeadingLink() {
+  const courseHomeLink = document.querySelector('a[data-key="coursehome"]');
+  if (!courseHomeLink) return;
+
+  const href = courseHomeLink.href;
+  if (!href) return;
+
+  const h1 = document.querySelector('#page-header .page-header-headings h1');
+  if (!h1) return;
+
+  // Не добавлять дважды
+  if (h1.classList.contains('kb-heading-link')) return;
+
+  h1.classList.add('kb-heading-link');
+  h1.setAttribute('role', 'link');
+  h1.setAttribute('tabindex', '0');
+  h1.title = courseHomeLink.textContent.trim();
+
+  h1.addEventListener('click', () => { location.href = href; });
+  h1.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      location.href = href;
+    }
+  });
+}
