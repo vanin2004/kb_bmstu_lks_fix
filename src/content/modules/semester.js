@@ -251,6 +251,29 @@ async function fillCourseSemesters(entries) {
     }
   }
 
+  // ── 4. Распространение текущего семестра на предметы с бо́льшим ID ────────
+  // Если хотя бы один курс определён как текущий семестр, то все курсы
+  // с бо́льшим числовым ID (у которых семестр всё ещё не определён)
+  // тоже считаются текущим семестром.
+  if (currentOrd !== null) {
+    let currentSemMinIdx = -1;
+    for (let i = 0; i < sorted.length; i++) {
+      if (cache.get(sorted[i].id) === currentOrd) {
+        currentSemMinIdx = i;
+        break;
+      }
+    }
+    if (currentSemMinIdx !== -1) {
+      for (let i = currentSemMinIdx + 1; i < sorted.length; i++) {
+        const { id } = sorted[i];
+        const cached = cache.get(id);
+        if (cached === null || cached === undefined) {
+          cache.set(id, currentOrd);
+        }
+      }
+    }
+  }
+
   return cache;
 }
 
